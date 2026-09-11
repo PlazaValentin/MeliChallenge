@@ -1,0 +1,21 @@
+{
+  "name": "challenge-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "preinstall": "cd ../backend && gradle build -x test",
+    "pretest": "bash ../setup.sh",
+    "prestart": "bash ../setup.sh",
+    "client": "echo 'Replace this script with your frontend dev server command. It must use port 3000 and host 0.0.0.0. See PROJECT_FILES_INSTRUCTIONS.md' && exit 1",
+    "server": "cd ../backend && gradle bootRun",
+    "start": "npx concurrently \"npm run server\" \"npm run client\"",
+    "build": "echo 'Replace with your frontend build command'",
+    "test-frontend": "echo 'Replace with your frontend test command'",
+    "test-backend": "cd ../backend && gradle test",
+    "test": "npm run test-frontend && npm run test-backend",
+    "posttest": "mv ../backend/build/test-results/test/TEST-com.hackerrank.corebanking.controller.AccountControllerTest.xml ../backend.xml 2>/dev/null || true"
+  },
+  "dependencies": {
+    "concurrently": "^8.0.0"
+  }
+}

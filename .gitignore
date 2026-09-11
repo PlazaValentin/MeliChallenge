@@ -1,0 +1,24 @@
+# Gradle
+.gradle/
+build/
+*.class
+
+# Spring Boot
+*.log
+*.pid
+
+# Node / Frontend
+node_modules/
+dist/
+.angular/
+.next/
+.svelte-kit/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
