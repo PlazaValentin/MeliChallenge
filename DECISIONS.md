@@ -127,35 +127,51 @@ aceptado en cada una.
 
 ## Scoring de importancia (preguntas)
 
-- **Factores que afectan el score:** tiempo de espera, palabras clave de
-  urgencia en el texto de la pregunta, monto total del pedido, estado del
-  pedido, y **estado de la pregunta** (agregado como caso borde: el estado
-  de la pregunta también pondera). El orden de peso relativo entre estos
-  factores todavía no está definido: se termina de definir y ponderar al
-  implementar el scoring. Como los pesos son configurables, la ponderación
-  inicial es una perspectiva propia, pensada para evolucionar junto al
-  equipo de Operaciones.
+- **Factores que afectan el score, en orden de peso**: tiempo de espera,
+  palabras clave de urgencia en el texto de la pregunta, monto total del
+  pedido, estado del pedido, y estado de la pregunta (agregado como caso
+  borde: el estado de la pregunta también pondera). El peso relativo de
+  cada factor se refleja en su techo de puntos posible, no en un
+  multiplicador aparte: a mayor peso, mayor techo.
 - **Normalización por brechas (buckets), no valores absolutos**, tanto
-  para tiempo como para monto, para evitar que una unidad continua (un
-  minuto, un peso) domine la suma solo por su magnitud. Ejemplo ilustrativo
-  de la idea (valores no definitivos):
-  - Tiempo de espera: 0–24h → 10, 24–72h → 20, 72h–7d → 30, más de 7d → 50.
-  - Estado del pedido: valores fijos por estado, ej. `SHIPPED` → 5,
-    `CANCELLED` → 30 (ver punto siguiente).
+  para tiempo como para monto, para evitar que una unidad continua (una
+  hora, un peso) domine la suma solo por su magnitud. Valores definidos:
+  - **Tiempo de espera** (techo 60): 0–24h → 0, 24–72h → 20, 72h–7d → 40,
+    más de 7d → 60.
+  - **Monto del pedido** (techo 40): menor a 50.000 → 0, 50.000–149.999,99
+    → 15, 150.000–499.999,99 → 25, 500.000 o más → 40.
+  - **Estado del pedido** (techo 30): `DELIVERED` → 0, `SHIPPED` → 5,
+    `PENDING` → 10, `CONFIRMED` → 10, `CANCELLED` → 30.
+  - **Estado de la pregunta** (techo 15): `RESOLVED` → 0, `ANSWERED` → 5,
+    `OPEN` → 15.
 - **`CANCELLED` pondera más que los estados en curso** (incluso más que
   `PENDING`/`CONFIRMED`), porque una pregunta sobre un pedido cancelado
   suele implicar devolución de dinero, un caso operacionalmente más
   sensible que un pedido que todavía se puede corregir.
-- **Palabras clave:** se buscan solo sobre el texto de la pregunta, nunca
-  sobre la respuesta del vendedor (para que el vendedor no pueda alterar
-  el score de su propia pregunta al responder). Matching por regex sobre
-  un diccionario de palabras (ej. "urgente", "roto", "incompleto",
-  "enojado", "maltrato"); a más coincidencias, mayor score. Queda
-  declarada como idea futura la posibilidad de agrupar palabras clave por
-  peso distinto (ej. "ofendido" más grave que "falta"), sin implementar
-  ahora por no tener criterio de negocio validado.
-- **Pesos y umbrales van en configuración**, no hardcodeados en el
-  dominio.
+- **Palabras clave** (techo 50 con el diccionario por defecto): se buscan
+  solo sobre el texto de la pregunta, nunca sobre la respuesta del
+  vendedor (para que el vendedor no pueda alterar el score de su propia
+  pregunta al responder). 10 puntos por cada palabra **distinta**
+  encontrada; una palabra repetida varias veces en el mismo texto no vuelve
+  a sumar. Diccionario de ejemplo (configurable, pensado para ilustrar la
+  idea, no exhaustivo): "urgente", "roto", "incompleto", "enojado",
+  "estafa", "defectuoso", "pesimo", "indignado", "reclamo", "devolucion".
+  Queda declarada como idea futura la posibilidad de agrupar palabras clave
+  por peso distinto (ej. "estafa" más grave que "incompleto"), sin
+  implementar ahora por no tener criterio de negocio validado.
+- **Score máximo teórico: 195** (60+50+40+30+15). **Score máximo al crear
+  la pregunta: 135** (sin el factor tiempo, que en ese momento aporta cero).
+- **Umbrales de clasificación**, sobre el score total: `LOW` si el score es
+  menor a 50; `MEDIUM` de 50 a 89; `HIGH` de 90 a 129; `CRITICAL` desde 130.
+  Verificado que `HIGH` y `CRITICAL` son alcanzables al crear la pregunta
+  (techo 135), sin depender del factor tiempo: por ejemplo, 5 palabras
+  clave distintas (50) + monto alto (40) + pedido `CANCELLED` (30) +
+  pregunta `OPEN` (15) = 135, `CRITICAL`.
+- **Pesos y umbrales van en configuración** (`app.scoring.*` en
+  `application.properties`, con binding tipado vía
+  `@ConfigurationProperties`), no hardcodeados en el dominio. La clase que
+  hace el binding vive en `infrastructure/config`, para que el dominio
+  (`domain/rules/scoring`) no dependa de anotaciones de Spring.
 - **Uso en dos momentos distintos:**
   - Al crear la pregunta: decide si se notifica. El factor tiempo aporta
     cero en este momento (recién creada, no hay espera que ponderar);
@@ -324,6 +340,11 @@ aceptado en cada una.
   vía de cambio son métodos de negocio que validan la transición, de modo que no
   sea posible construir ni dejar un recurso en un estado inválido desde afuera.
 - Esta estructura se respeta de acá en adelante para las capas que se agreguen.
+- **Reglas que no pertenecen a una única entidad viven en `domain/rules`**,
+  organizadas por subpaquete temático (ej. `domain/rules/scoring` para el
+  cálculo de importancia de preguntas). Es el lugar reservado desde la
+  decisión anterior sobre dónde no poner las reglas de transición de
+  estado.
 - **Patrón repository:** el contrato (`OrderRepository`, `QuestionRepository`,
   `ProductRepository`, `SellerRepository`) vive en `domain/repository`; la
   implementación en memoria vive en `infrastructure/persistence`. Un repositorio
