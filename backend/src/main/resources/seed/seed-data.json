@@ -1,0 +1,434 @@
+{
+  "sellers": [
+    {
+      "id": "10000000-0000-0000-0000-000000000001",
+      "name": "TecnoHogar",
+      "email": "ventas@tecnohogar.com"
+    },
+    {
+      "id": "10000000-0000-0000-0000-000000000002",
+      "name": "Deportes Andes",
+      "email": "contacto@deportesandes.com"
+    }
+  ],
+  "products": [
+    {
+      "id": "20000000-0000-0000-0000-000000000001",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "name": "Auriculares inalambricos X200",
+      "price": 48990.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000002",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "name": "Cable USB-C 2m",
+      "price": 6990.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000003",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "name": "Smart TV 55\" 4K",
+      "price": 620000.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000004",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "name": "Parlante Bluetooth Portatil",
+      "price": 35990.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000005",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "name": "Zapatillas Running Pro",
+      "price": 89990.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000006",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "name": "Mochila Trekking 40L",
+      "price": 54990.00
+    },
+    {
+      "id": "20000000-0000-0000-0000-000000000007",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "name": "Botella Termica 1L",
+      "price": 12990.00
+    }
+  ],
+  "orders": [
+    {
+      "id": "30000000-0000-0000-0000-000000000001",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Lucia Fernandez",
+      "buyerEmail": "lucia.f@mail.com",
+      "status": "PENDING",
+      "offsetDays": 0,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000001",
+          "productName": "Auriculares inalambricos X200",
+          "quantity": 1,
+          "unitPrice": 48990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000002",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Marcos Diaz",
+      "buyerEmail": "mdiaz@mail.com",
+      "status": "CONFIRMED",
+      "offsetDays": 1,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000002",
+          "productName": "Cable USB-C 2m",
+          "quantity": 3,
+          "unitPrice": 6990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000003",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Carla Gomez",
+      "buyerEmail": "carla.gomez@mail.com",
+      "status": "SHIPPED",
+      "offsetDays": 2,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000001",
+          "productName": "Auriculares inalambricos X200",
+          "quantity": 1,
+          "unitPrice": 48990.00
+        },
+        {
+          "productId": "20000000-0000-0000-0000-000000000004",
+          "productName": "Parlante Bluetooth Portatil",
+          "quantity": 1,
+          "unitPrice": 35990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000004",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Pedro Ramirez",
+      "buyerEmail": "pedro.ramirez@mail.com",
+      "status": "DELIVERED",
+      "offsetDays": 12,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000004",
+          "productName": "Parlante Bluetooth Portatil",
+          "quantity": 1,
+          "unitPrice": 35990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000005",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Sofia Torres",
+      "buyerEmail": "sofia.torres@mail.com",
+      "status": "DELIVERED",
+      "offsetDays": 20,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000002",
+          "productName": "Cable USB-C 2m",
+          "quantity": 2,
+          "unitPrice": 6990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000006",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Nicolas Ortiz",
+      "buyerEmail": "nicolas.ortiz@mail.com",
+      "status": "CANCELLED",
+      "offsetDays": 5,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000003",
+          "productName": "Smart TV 55\" 4K",
+          "quantity": 1,
+          "unitPrice": 620000.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000007",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Valentina Ruiz",
+      "buyerEmail": "valentina.ruiz@mail.com",
+      "status": "PENDING",
+      "offsetDays": 1,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000003",
+          "productName": "Smart TV 55\" 4K",
+          "quantity": 1,
+          "unitPrice": 620000.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000008",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Diego Molina",
+      "buyerEmail": "diego.molina@mail.com",
+      "status": "CONFIRMED",
+      "offsetDays": 3,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000002",
+          "productName": "Cable USB-C 2m",
+          "quantity": 1,
+          "unitPrice": 6990.00
+        },
+        {
+          "productId": "20000000-0000-0000-0000-000000000004",
+          "productName": "Parlante Bluetooth Portatil",
+          "quantity": 2,
+          "unitPrice": 35990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000009",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Lucia Fernandez",
+      "buyerEmail": "lucia.f@mail.com",
+      "status": "SHIPPED",
+      "offsetDays": 4,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000005",
+          "productName": "Zapatillas Running Pro",
+          "quantity": 1,
+          "unitPrice": 89990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000010",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Ramiro Suarez",
+      "buyerEmail": "ramiro.suarez@mail.com",
+      "status": "PENDING",
+      "offsetDays": 1,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000006",
+          "productName": "Mochila Trekking 40L",
+          "quantity": 1,
+          "unitPrice": 54990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000011",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Agustina Lopez",
+      "buyerEmail": "agustina.lopez@mail.com",
+      "status": "DELIVERED",
+      "offsetDays": 8,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000007",
+          "productName": "Botella Termica 1L",
+          "quantity": 2,
+          "unitPrice": 12990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000012",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Federico Castro",
+      "buyerEmail": "federico.castro@mail.com",
+      "status": "CANCELLED",
+      "offsetDays": 6,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000005",
+          "productName": "Zapatillas Running Pro",
+          "quantity": 2,
+          "unitPrice": 89990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000013",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Micaela Herrera",
+      "buyerEmail": "micaela.herrera@mail.com",
+      "status": "CONFIRMED",
+      "offsetDays": 1,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000006",
+          "productName": "Mochila Trekking 40L",
+          "quantity": 1,
+          "unitPrice": 54990.00
+        },
+        {
+          "productId": "20000000-0000-0000-0000-000000000007",
+          "productName": "Botella Termica 1L",
+          "quantity": 1,
+          "unitPrice": 12990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000014",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Tomas Vega",
+      "buyerEmail": "tomas.vega@mail.com",
+      "status": "SHIPPED",
+      "offsetDays": 2,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000007",
+          "productName": "Botella Termica 1L",
+          "quantity": 1,
+          "unitPrice": 12990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000015",
+      "sellerId": "10000000-0000-0000-0000-000000000002",
+      "buyerName": "Camila Rojas",
+      "buyerEmail": "camila.rojas@mail.com",
+      "status": "DELIVERED",
+      "offsetDays": 15,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000005",
+          "productName": "Zapatillas Running Pro",
+          "quantity": 1,
+          "unitPrice": 89990.00
+        }
+      ]
+    },
+    {
+      "id": "30000000-0000-0000-0000-000000000016",
+      "sellerId": "10000000-0000-0000-0000-000000000001",
+      "buyerName": "Julian Paz",
+      "buyerEmail": "julian.paz@mail.com",
+      "status": "PENDING",
+      "offsetDays": 0,
+      "lines": [
+        {
+          "productId": "20000000-0000-0000-0000-000000000002",
+          "productName": "Cable USB-C 2m",
+          "quantity": 1,
+          "unitPrice": 6990.00
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": "40000000-0000-0000-0000-000000000001",
+      "orderId": "30000000-0000-0000-0000-000000000005",
+      "productId": null,
+      "text": "Cuando llega el pedido completo?",
+      "offsetHours": 240,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000002",
+      "orderId": "30000000-0000-0000-0000-000000000003",
+      "productId": "20000000-0000-0000-0000-000000000001",
+      "text": "Llego el auricular roto e incompleto, estoy indignado, quiero devolucion urgente",
+      "offsetHours": 2,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000003",
+      "orderId": "30000000-0000-0000-0000-000000000011",
+      "productId": "20000000-0000-0000-0000-000000000007",
+      "text": "Hace varios dias que espero novedades sobre la entrega de mi pedido",
+      "offsetHours": 100,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000004",
+      "orderId": "30000000-0000-0000-0000-000000000007",
+      "productId": null,
+      "text": "Quiero confirmar el color del televisor antes de que se despache",
+      "offsetHours": 5,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000005",
+      "orderId": "30000000-0000-0000-0000-000000000010",
+      "productId": "20000000-0000-0000-0000-000000000006",
+      "text": "La mochila viene con el logo bordado o estampado?",
+      "offsetHours": 1,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000006",
+      "orderId": "30000000-0000-0000-0000-000000000012",
+      "productId": null,
+      "text": "Estafa, cancelaron mi pedido y nadie me responde, es un pesimo servicio",
+      "offsetHours": 50,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000007",
+      "orderId": "30000000-0000-0000-0000-000000000008",
+      "productId": "20000000-0000-0000-0000-000000000004",
+      "text": "El parlante es resistente al agua?",
+      "offsetHours": 20,
+      "status": "ANSWERED",
+      "answerText": "Si, tiene certificacion IPX5."
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000008",
+      "orderId": "30000000-0000-0000-0000-000000000004",
+      "productId": null,
+      "text": "Todo perfecto con la entrega, gracias!",
+      "offsetHours": 96,
+      "status": "RESOLVED",
+      "answerText": "Gracias por tu compra!"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000009",
+      "orderId": "30000000-0000-0000-0000-000000000014",
+      "productId": "20000000-0000-0000-0000-000000000007",
+      "text": "Me llego el producto roto y defectuoso, dejo hecho el reclamo",
+      "offsetHours": 3,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000010",
+      "orderId": "30000000-0000-0000-0000-000000000003",
+      "productId": null,
+      "text": "Puedo agregar otro producto a este pedido antes de que se despache?",
+      "offsetHours": 1,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000011",
+      "orderId": "30000000-0000-0000-0000-000000000003",
+      "productId": "20000000-0000-0000-0000-000000000004",
+      "text": "El parlante tambien llego con un golpe, otro reclamo mas de este pedido",
+      "offsetHours": 3,
+      "status": "OPEN"
+    },
+    {
+      "id": "40000000-0000-0000-0000-000000000012",
+      "orderId": "30000000-0000-0000-0000-000000000006",
+      "productId": "20000000-0000-0000-0000-000000000003",
+      "text": "Cancelaron mi pedido del televisor y necesito la devolucion del dinero urgente",
+      "offsetHours": 100,
+      "status": "OPEN"
+    }
+  ]
+}

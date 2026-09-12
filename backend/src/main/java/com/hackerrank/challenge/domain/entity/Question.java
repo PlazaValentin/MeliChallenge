@@ -54,6 +54,23 @@ public final class Question {
      * @param productId opcional; si viene, debe ser un producto de ese pedido.
      */
     public static Question on(Order order, UUID productId, String questionText, Instant createdAt) {
+        return reconstitute(UUID.randomUUID(), order, productId, questionText, createdAt);
+    }
+
+    /**
+     * Reconstruye una pregunta ya existente (por ejemplo, desde datos de
+     * arranque/seed) preservando su id original.
+     *
+     * <p>
+     * Aplica las mismas validaciones que {@link #on(Order, UUID, String, Instant)};
+     * la unica diferencia es que el id no se genera sino que se recibe, para no
+     * perder la identidad de un registro persistido.
+     */
+    public static Question reconstitute(
+            UUID id, Order order, UUID productId, String questionText, Instant createdAt) {
+        if (id == null) {
+            throw new DomainValidationException("El id de la pregunta es obligatorio.");
+        }
         if (order == null) {
             throw new DomainValidationException("El pedido de la pregunta es obligatorio.");
         }
@@ -67,8 +84,7 @@ public final class Question {
             throw new DomainValidationException(
                     "El producto indicado no forma parte de este pedido.");
         }
-        return new Question(
-                UUID.randomUUID(), order.getId(), productId, questionText.trim(), createdAt);
+        return new Question(id, order.getId(), productId, questionText.trim(), createdAt);
     }
 
     public UUID getId() {
