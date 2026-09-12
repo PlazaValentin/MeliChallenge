@@ -1,0 +1,414 @@
+Chat que exporta conversacion del chat actual antes de que se rompa.
+
+YO:
+Estoy resolviendo un challenge tecnico full stack, vos tenes en tu contexto el quertion description del challenge ?
+
+IA:
+Sí, lo tengo. Es el challenge "Seller Dashboard: Orders & Questions" (Full-Stack, Gradle + npm), con 3 objetivos:
+
+Orders API & Dashboard — API de órdenes por seller (cada orden con múltiples productos, cantidad, precio unitario, comprador, estado con ciclo de vida, fecha) + dashboard frontend con filtros/búsqueda (estado, rango de fechas, comprador) y dataset precargado vía seed/script.
+Buyer Questions — preguntas ligadas a una orden (y opcionalmente a un producto), con estados open/resolved, respuesta del seller desde el front, y endpoint de no resueltas ordenadas por importancia con una fórmula que vos definís (valor de la orden, tiempo de espera, keywords, etc.).
+Sistema de notificaciones flexible — cuando una pregunta se clasifica High Priority/Critical, disparar notificación (email simulado por consola) con un diseño extensible para agregar Slack y SMS después (patrón strategy/observer).
+Además piden un README con setup/run de backend y frontend + notas técnicas. El stack base del workspace es Spring Boot (Gradle) en backend y npm en frontend.
+
+¿Querés que armemos un plan de implementación (arquitectura, entidades, endpoints, fórmula de prioridad y estructura del front)?
+
+YO:
+Estoy resolviendo este challenge. NO lo resuelvas ni escribas código todavía.
+
+CONTEXTO DEL SCAFFOLD
+
+Backend: Spring Boot vacío (solo main), Gradle.
+Dependencias: solo spring-boot-starter-web y spring-boot-starter-test.
+Sin validation, sin JPA, sin base embebida.
+Frontend: Vite + React sin componentes propios.
+No hay tests visibles, contratos, modelos ni estructura definida.
+Mi foco declarado es backend; el frontend lo resuelvo funcional y prolijo.
+ENUNCIADO
+Lo acabamos de traer al contexto, es el seller dashboard: orders and questions.
+
+MI LECTURA DEL PROBLEMA
+¿Qué problema resuelve?
+Los vendedores no tienen visibilidad unificada de sus pedidos, y las preguntas de los compradores se les dispersan en cadenas de mails. Se necesita una única herramienta donde puedan ver qué les compraron y responder las consultas. En paralelo, el equipo de Operaciones necesita priorizar las preguntas sin resolver.
+
+¿Para quién?
+Dos usuarios con necesidades distintas: el vendedor, que gestiona sus pedidos y responde; y Operaciones, que necesita ver lo urgente primero.
+
+¿Qué tiene que poder hacer?
+Listar los pedidos del vendedor con filtros por estado, fecha o comprador. Mostrar cada pedido con sus productos, cantidades y precios de la compra. Manejar el ciclo de vida del pedido con transiciones válidas. Ver y responder las preguntas asociadas a cada pedido. Devolver a Operaciones las preguntas sin resolver ordenadas por importancia. Y disparar una notificación cuando una pregunta sea de alta prioridad, de forma que sumar canales nuevos no implique modificar lo existente.
+
+Lo que entiendo que evalúan
+Principalmente cómo resuelvo la ambigüedad: hay tres decisiones delegadas a mi criterio —los estados del pedido y sus transiciones, la fórmula de importancia, y la extensibilidad de las notificaciones—. También cómo colaboro con la IA, y el criterio técnico detrás de cada decisión con sus trade-offs.
+
+Lectura técnica preliminar
+Una API REST con persistencia en memoria que sostenga las relaciones entre vendedor, producto, comprador, pedido, línea de pedido y pregunta. La línea de pedido es la que guarda cantidad y precio al momento de la compra. Mi foco está en el backend; el frontend lo resuelvo funcional y prolijo, sin pretensiones.
+
+Quiero cinco cosas, en este orden:
+
+Reformulá el problema con tus palabras, para que yo valide si
+entendimos lo mismo.
+
+Extraé el modelo de dominio implícito: qué entidades aparecen en
+el enunciado, qué relaciones hay entre ellas y qué atributos se
+mencionan explícitamente. Distinguí lo que el enunciado exige de
+lo que sería una suposición mía.
+
+Listá TODAS las decisiones que el enunciado deja abiertas a
+propósito. Para cada una, decime qué está en juego al elegir una
+opción u otra. No elijas por mí.
+
+Señalá qué partes del enunciado son señales de diseño encubiertas:
+requisitos que están redactados de forma que apuntan a una
+propiedad concreta de la solución más que a una funcionalidad.
+
+Decime qué señales da el scaffold sobre el alcance esperado, en
+particular que solo traiga web y test como dependencias.
+
+No propongas arquitectura ni escribas código. Quiero entender el
+problema antes de diseñar.
+
+IA:
+Leí el scaffold completo. Vamos por los cinco puntos.
+
+1. Reformulación del problema
+Hay un marketplace donde vendedores tienen catálogo propio, y compradores compran. El vendedor hoy sufre dos cegueras:
+
+Ceguera operativa: no sabe, en un solo lugar, qué le compraron, cuánto de cada cosa, a qué precio, quién y en qué estado está cada pedido.
+Ceguera conversacional: las preguntas de los compradores viven en mails, desacopladas del pedido que las originó, así que no hay forma de verlas en contexto ni de responder desde un lugar único.
+La solución pedida es una herramienta que resuelve ambas: un listado de pedidos filtrable/buscable, con detalle de línea, y las preguntas de cada pedido visibles y respondibles ahí mismo.
+
+Encima de eso hay un tercer usuario que no es el vendedor: Operaciones. No le interesa un pedido puntual ni el histórico; le interesa la cola de preguntas sin resolver, de todos los pedidos, ordenada por urgencia. Es una vista transversal, no una vista de vendedor. Clara admite explícitamente que no sabe qué significa "importante" — ese hueco lo tengo que llenar yo y justificarlo.
+
+Y una cuarta cosa: cuando la importancia calculada cae en el rango alto, el sistema tiene que avisar. Hoy por mail simulado en consola, pero el enunciado ya te dice que en dos semanas van a pedir Slack y SMS. Eso no es un requisito de features, es un requisito de forma: la solución tiene que absorber canales nuevos sin que haya que abrir lo ya escrito.
+
+Coincido con tu lectura en todo. Dos matices que ajustaría:
+
+Vos decís "dos usuarios". Yo diría dos consumidores del mismo dominio con vistas opuestas: el vendedor mira vertical (un pedido, todo su detalle), Operaciones mira horizontal (todas las preguntas abiertas, cross-pedido). Esa oposición es la que justifica que sean endpoints distintos y no un filtro del mismo listado.
+Vos hablás de "comprador" como entidad. El enunciado dice "buyer information", que es más débil que "entidad Buyer". Lo marco abajo.
+2. Modelo de dominio implícito
+Lo que el enunciado exige (texto explícito)
+Entidad	Evidencia textual	Atributos exigidos
+Seller	"Each seller has their own catalog of products", "order data for a seller", "send an email to the seller"	identidad; es el dueño del catálogo y el destinatario de notificaciones
+Product	"their own catalog of products", "the same buyer orders three different products at once"	identidad; pertenece a un seller
+Order	"what was ordered", "recent orders"	debe incluir at least: buyer information, order status, date
+Línea de pedido	"each order may contain one or more products, each with its own quantity and unit price at the time of purchase"	quantity, unit price al momento de la compra
+Question	"Buyers can leave questions or comments on their orders"	at least un text body; linkeada a un order; opcionalmente referencia un product del order; tiene estado open/resolved
+Relaciones exigidas
+Seller 1—N Product — explícito ("su propio catálogo").
+Order 1—N línea de pedido — explícito ("one or more products").
+línea de pedido N—1 Product — implícito pero inevitable: si la línea congela el precio de compra, el precio vive en la línea y la identidad del producto vive aparte.
+Question N—1 Order — explícito ("each question should be linked to an order").
+Question 0..1—1 Product — explícito y opcional ("may reference a specific product within the order"). El "within the order" es una regla de integridad, no decorativa: no podés preguntar por un producto que no está en ese pedido.
+Order N—1 Seller — implícito pero necesario: sin esto no podés responder "los pedidos de este vendedor".
+Ojo con una ambigüedad real acá: el enunciado nunca dice si un pedido puede tener productos de más de un vendedor. Dice "each seller has their own catalog" y "order data for a seller". Si un pedido pudiera cruzar vendedores, Order → Seller deja de ser N—1 y pasa a derivarse de las líneas, y el filtrado por vendedor se vuelve un filtro sobre líneas. Es una decisión de alcance que conviene declarar explícitamente.
+
+Lo que sería suposición tuya
+Buyer como entidad propia. El enunciado pide "buyer information". Podría ser un campo embebido en el pedido (nombre + email) en lugar de una entidad con identidad y pedidos asociados. Modelarlo como entidad es una suposición — defendible, pero suposición. Y el "same buyer orders three different products at once" habla de un pedido con tres líneas, no de identidad de comprador persistida.
+Answer/Reply como entidad. El enunciado dice "reply through the frontend interface" y "the seller has no easy way to see it and respond". No dice si es una respuesta única (campo en la pregunta) o un hilo de N mensajes. El hilo es suposición.
+Category de producto. Aparece solo como ejemplo de posible factor de importancia ("product category"), no como atributo requerido. Si tu fórmula lo usa, lo estás introduciendo vos.
+Los estados del pedido concretos. El enunciado da ejemplos ("new", "shipped", "delivered") y dice literalmente "up to your discretion". Los estados que elijas son tuyos.
+Los estados de la pregunta más allá de open/resolved. "or any states you consider appropriate" — cualquier cosa extra (pending, answered, escalated) es tuya.
+Total del pedido. Nunca se pide como atributo. Es derivable de las líneas. Si lo materializás, es decisión tuya (y "order value" aparece como ejemplo de factor de importancia, lo cual sugiere que lo vas a necesitar computable).
+Priority como atributo de la pregunta. El enunciado habla de "classified as High Priority or Critical by your logic". No dice que la prioridad se persista — podría ser puramente calculada. Persistirla es suposición.
+3. Decisiones abiertas a propósito
+Las agrupo en las tres que el enunciado delega en forma literal y después las que quedan abiertas por omisión. No elijo por vos; te digo qué se pone en juego.
+
+A. Estados del pedido y transiciones válidas
+"The stages and valid transitions are up to your discretion."
+
+Qué está en juego:
+
+Granularidad. Pocos estados (3-4) → el modelo es legible pero puede parecer que esquivaste el problema. Muchos estados (7-8) → demostrás rigor pero inflás el testing y el seed, y arriesgás estados que ningún endpoint ejercita.
+Dónde vive la regla de transición. Si la validación vive en el dominio, la regla es una sola y el API es un cliente más. Si vive en el controller o en un if del service, se duplica en cuanto aparezca un segundo camino de entrada (ej. el seed).
+Estados terminales y ramas de excepción. ¿Modelás cancelación y devolución? Son lo que hace que un ciclo de vida sea realmente un grafo y no una lista ordenada. Sin al menos una rama, "transiciones válidas" es indistinguible de "un entero que incrementa".
+Qué pasa con un intento inválido. ¿Excepción de dominio traducida a 409? ¿400? ¿Silencio? Esto define si el ciclo de vida es una regla de negocio real o documentación.
+Interacción con las preguntas. ¿Se puede preguntar sobre un pedido entregado o cancelado? El enunciado no lo dice, y la respuesta afecta a la fórmula de importancia.
+B. La fórmula de importancia
+"you must decide and implement the logic that determines why one question is more important than another."
+
+Esta es la decisión del challenge. El enunciado dice "We want to see how you handle this ambiguity" — te está avisando que acá te miran.
+
+Qué está en juego:
+
+Qué factores entran. Los ejemplos dados (order value, time waiting, product category, keywords) son heterogéneos a propósito: uno es plata, uno es tiempo, uno es taxonomía, uno es texto. Elegir sólo los fáciles (tiempo) es distinto de combinar plata + tiempo + señal semántica. Cuantos más factores, más superficie de justificación y más riesgo de que la fórmula sea arbitraria.
+Cómo se combinan. Suma ponderada (simple, explicable, requiere normalizar escalas heterogéneas), reglas en cascada (determinista y auditable, pero rígida y con saltos), o híbrido (reglas duras para lo crítico + score para el resto). Cada opción dice algo distinto sobre cómo pensás: la suma ponderada es "tuneable", la cascada es "explicable al negocio".
+Normalización. Si sumás plata y horas, ¿cómo evitás que un pedido de $50.000 aplaste todo lo demás? Capear, escalar logarítmicamente, o bucketizar. Sin esto, la fórmula tiene un factor dominante de hecho.
+Score continuo vs. bandas. El Objetivo #3 te obliga a tener bandas nombradas ("High Priority", "Critical"), pero el Objetivo #2 te pide un orden. Necesitás las dos cosas: un score que ordene y un mapeo score→banda. Dónde ponés los cortes es decisión tuya, y un corte mal puesto hace que todo sea crítico o que nada lo sea.
+Determinismo y testabilidad. Si el tiempo de espera entra en el score, la fórmula depende del reloj: el mismo dato da distinto resultado mañana. Eso condiciona si tus tests son estables y si el seed es reproducible.
+Momento del cálculo. ¿Se calcula al crear la pregunta y se guarda, o se calcula en cada consulta? Guardado es rápido y estable pero queda obsoleto (el tiempo de espera crece solo). Calculado al vuelo es siempre correcto pero recomputás en cada request y no tenés historial de por qué se notificó.
+Configurabilidad. Pesos y umbrales hardcodeados vs. externalizados. Clara dijo "no hemos definido la fórmula": eso sugiere que va a cambiar. Si los pesos son constantes en el código, cada cambio de criterio es un deploy.
+Explicabilidad. ¿El API devuelve sólo el orden, o también por qué cada pregunta está donde está? Operaciones tiene que confiar en un orden que no definió. Un score opaco es un orden que nadie va a creer.
+Empates. Dos preguntas con el mismo score: ¿qué desempata? Sin criterio explícito, el orden es no determinista entre requests.
+C. Extensibilidad del sistema de notificaciones
+"next week they will want Slack, and the following week SMS."
+
+Qué está en juego:
+
+Qué significa "sin modificar lo existente". Agregar un canal nuevo, ¿toca sólo un archivo nuevo? ¿O toca también un switch, un factory, o el llamador? El enunciado te está midiendo exactamente esto, y la diferencia es visible a ojo.
+Uno o varios canales a la vez. ¿Cuando llega Slack, reemplaza al mail o coexisten? Si coexisten, el disparador tiene que poder hablarle a N canales, no a uno intercambiable. Son dos diseños distintos y elegir el equivocado ahora se paga después.
+Selección del canal. Fija en código, por configuración, o derivada de la banda de prioridad (ej. Critical va por SMS, High por mail). La tercera es más rica pero acopla la política de ruteo a la clasificación.
+Acoplamiento con el cálculo de prioridad. Si la clasificación llama directo al notificador, el dominio queda atado a un efecto colateral. Si emite un evento y alguien más escucha, se desacopla — a costa de indirección y de que el flujo sea menos obvio de leer.
+Idempotencia. Si el score se recalcula en cada consulta de Operaciones, ¿se notifica en cada consulta? Necesitás saber si una pregunta ya fue notificada, o vas a spamear. Esta es la trampa silenciosa del Objetivo #3 y se conecta directamente con la decisión de "momento del cálculo" en B.
+Fallo del canal. ¿Un canal caído rompe la operación de negocio? ¿Se registran los intentos? En consola no se nota, pero el diseño revela si lo pensaste.
+Sincronía. Notificar dentro del request vs. fuera. Con log a consola es irrelevante funcionalmente, pero dice si pensaste el caso real.
+D. Decisiones abiertas por omisión (no las delega explícitamente, pero no las define)
+Autenticación / identidad del vendedor. El enunciado dice "order data for a seller" y nunca menciona login. ¿El sellerId viaja como path param, query param, header? Elegir header simula sesión; elegir path param es más honesto sobre que no hay auth. En juego: si Operaciones y el vendedor comparten endpoints, necesitás distinguirlos de alguna forma.
+Multi-tenancy real. ¿Un vendedor puede leer los pedidos de otro si adivina el ID? Con auth ausente es fácil dejar el agujero abierto. En juego: si lo mencionás y lo cerrás aunque sea con una verificación simple, muestra criterio.
+Quién crea las preguntas. No hay UI de comprador en el pedido. Entonces las preguntas, ¿sólo vienen del seed, o hay un endpoint de creación? Sin endpoint no podés demostrar el disparo de notificaciones en vivo. En juego: la demostrabilidad del Objetivo #3.
+"Recent orders". El enunciado dice "recent" y no define qué es. ¿Últimos 30 días? ¿Los últimos N? ¿Todo ordenado por fecha? En juego: si pusieras un filtro temporal duro, el seed tiene que caer dentro de esa ventana o el dashboard aparece vacío.
+Paginación. No se pide. Con dataset en memoria no hace falta. En juego: si el listado devuelve todo, es correcto para el alcance pero conviene que sea una decisión declarada y no un olvido.
+Semántica de los filtros combinados. Estado + rango de fechas + comprador, ¿son AND? ¿La búsqueda de comprador es exacta, prefijo o substring case-insensitive? ¿Los rangos son inclusivos? En juego: es la clase de detalle donde el front y el back se desalinean.
+Alcance del "resolved". ¿Responder una pregunta la resuelve automáticamente, o son dos acciones separadas? Operaciones sólo mira las no resueltas, así que esto define si la cola se vacía sola o requiere una acción explícita. Fuerte impacto en el flujo del front.
+Cómo se carga el dataset. "script, seed file, or similar" — literal. En juego: si el seed corre siempre al arrancar y las mutaciones son en memoria, cada reinicio vuelve al estado inicial. Eso es bueno para la demo y hay que decirlo.
+Modelo de concurrencia. Persistencia en memoria + múltiples requests. ¿Estructuras thread-safe o no? En juego: nadie va a hacer load testing, pero elegir colecciones concurrentes y mencionarlo en una línea del README es señal de criterio.
+Timezone y tipo de fecha. Fechas de p
+(respuesta no finalizada por alguna falla del sistema pero no importa, continue asi.)
+
+YO:
+Ya cerré las decisiones de diseño. NO las rediscutas ni reescribas
+el diseño: quiero que lo ataques para encontrar agujeros antes de
+escribir código.
+
+MODELO
+
+Seller 1—N Product (catálogo propio)
+Order N—1 Seller. Un pedido pertenece a un solo vendedor.
+Order 1—N LineaPedido. La línea guarda productoId, nombre,
+cantidad y precioUnitario como copia al momento de la compra.
+Question N—1 Order, y 0..1 Product (debe pertenecer a ese pedido).
+Buyer NO es entidad: los datos del comprador van embebidos en Order.
+El total del pedido se calcula desde las líneas, no se persiste.
+ESTADOS
+Pedido: PENDIENTE → CONFIRMADO → ENVIADO → ENTREGADO
+PENDIENTE y CONFIRMADO pueden ir a CANCELADO.
+CANCELADO y ENTREGADO son terminales.
+Sin devoluciones, sin checkpoints de envío, sin facturación.
+Pregunta: ABIERTA → RESPONDIDA → RESUELTA
+Responder y resolver son dos acciones separadas. Responder
+pasa la pregunta a RESPONDIDA; resolver es una acción
+explícita del vendedor. Operaciones ve ABIERTA y RESPONDIDA
+como "sin resolver".
+
+LISTADO DE PEDIDOS
+
+Sin ventana temporal: se devuelven todos, ordenados por fecha
+descendente.
+Filtros combinables con AND: estado, rango de fechas inclusivo, y
+búsqueda de comprador por substring case-insensitive.
+PRIORIDAD
+
+Score por suma ponderada, de mayor a menor peso: tiempo de espera,
+palabras clave de urgencia en el texto, monto total del pedido, y
+estado del pedido (un pedido en curso pesa más que uno ya entregado:
+todavía se puede corregir).
+Pesos y umbrales en configuración, no hardcodeados.
+Se usa en dos momentos distintos:
+· al crear la pregunta, para decidir si notificar
+· al vuelo en cada consulta de Operaciones, para ordenar
+(al crear, el factor tiempo aporta cero: solo pesan keyword, monto
+y estado del pedido)
+Empate: primero la más vieja.
+NOTIFICACIONES
+
+Al crear la pregunta se calcula y persiste su clasificación, y se
+publica un evento de aplicación. El request HTTP responde sin esperar.
+Un listener asincrónico evalúa si la clasificación amerita notificar
+y envía por todos los canales activos por configuración.
+Email, Slack y SMS implementados; solo email activo.
+El fallo de un canal no afecta a los demás; se registra en log.
+FUERA DE ALCANCE, DECLARADO
+Autenticación, multi-tenancy, paginación, devoluciones, hilo de
+mensajes en las preguntas, reevaluación periódica del score.
+
+Quiero cinco cosas:
+
+Casos borde que no contemplé, priorizados por probabilidad de que
+un evaluador los note.
+Inconsistencias o contradicciones entre estas decisiones.
+Qué se rompe primero si el volumen crece 100x.
+Cuál de estas decisiones es la más discutible y qué me preguntaría
+un evaluador escéptico sobre ella.
+Qué falta definir que impacte en el contrato de la API o en el
+front, y que si no decido ahora me va a frenar después.
+No escribas código. No propongas features nuevas. No sugieras
+tecnologías.
+
+IA:
+Ataque al diseño, sin rediscutirlo.
+
+1. Casos borde, por probabilidad de que un evaluador los note
+Casi seguro que los toca:
+
+El reloj de espera no se resetea al responder. Tiempo de espera es tu factor de mayor peso y se mide (asumo) desde la creación. Una pregunta RESPONDIDA que espera el cierre del vendedor sigue escalando y va a coronar el ranking de Ops, desplazando ABIERTAS recientes que nadie miró. Ops quiere lo no atendido, no lo no cerrado.
+Escalas sin normalizar. "Suma ponderada, de mayor a menor peso" no significa nada si sumás minutos (0–10.000), monto (0–500.000) y un booleano de keyword. El factor que domina es el de mayor magnitud, no el de mayor peso. Sin normalización o saturación por factor, tus pesos son decorativos y eso se ve en cuanto alguien lee la fórmula.
+Rango de fechas inclusivo con timestamps. Si la orden guarda fecha-hora y el filtro recibe fecha, to=2026-09-11 excluye todo lo de ese día después de las 00:00. Es el bug clásico de filtros de fecha.
+Transiciones inválidas y acciones repetidas. Cancelar un ENTREGADO, resolver dos veces, responder una RESUELTA, resolver una ABIERTA sin respuesta previa (¿se permite saltear RESPONDIDA cuando el vendedor considera que no aplica?). Falta definir si es error o no-op, y con qué código.
+Pregunta con productId que no pertenece al pedido. Lo declaraste como invariante pero sin starter-validation la validación es manual; si no está, es el primer input que prueba un evaluador.
+Pregunta sobre pedido CANCELADO. ¿Se puede crear? Y en el score, cancelado es terminal pero no es "ya entregado": ¿pesa como ENTREGADO o más? Un reclamo sobre un pedido cancelado suele ser justamente urgente.
+CORS. Front en 3000, API en 8080 bajo dominio proxy. Si no está configurado, el dashboard no muestra nada y la demo muere en el primer render.
+Probable:
+
+Clasificación persistida vs. recalculada. Ver punto 2, es también contradicción.
+Búsqueda de comprador: ¿matchea nombre, email o ambos? Acentos, espacios, string vacío (¿devuelve todo o nada?), trim.
+Filtro de estado con valor inválido: ¿400 o lista vacía? ¿acepta múltiples estados?
+Seed con fechas fijas. Si el dataset tiene fechas absolutas, con el correr de los días todo se vuelve CRITICAL por antigüedad y el ranking pierde sentido. Las fechas deberían ser relativas al arranque.
+Desempate inoperante. Con tiempo como factor dominante y continuo, el empate exacto de score es prácticamente imposible salvo que dos preguntas sean idénticas; tu regla "primero la más vieja" nunca se ejecuta. No está mal, pero si la declarás en el README alguien va a preguntar cuándo aplica.
+Keywords: idioma del dataset, mayúsculas/acentos, negaciones ("no es urgente", "urgente no, consulta general"), y keyword en la respuesta del vendedor contaminando el texto evaluado si no separás campos.
+Dinero: double para precios y totales. Si el total se calcula desde líneas con punto flotante, los centavos van a bailar. Falta también moneda y redondeo.
+Menos probable pero real:
+
+Pedido sin líneas, cantidad cero o negativa, línea con producto de otro vendedor.
+Concurrencia sobre el store in-memory: generación de ids y lectura desde el listener async mientras se escribe.
+Tests flaky por el listener asincrónico (asserts sobre el efecto de la notificación sin esperar).
+Pedido con muchas preguntas: el detalle crece sin límite.
+2. Inconsistencias internas
+La más grave: el factor de mayor peso no participa de la decisión de notificar. Al crear, tiempo aporta cero. Entonces ninguna pregunta puede ser High/Critical por espera, y como descartaste la reevaluación periódica, una pregunta que cruza el umbral con el tiempo nunca dispara notificación. El objetivo #3 pide notificar "cada vez que una pregunta es clasificada High/Critical"; tu sistema clasifica al vuelo en cada consulta de Ops y ahí no notifica. Hay un agujero declarado entre el criterio de ranking y el criterio de alerta.
+Dos fuentes de verdad para la clasificación. Persistís la del momento de creación y mostrás la del momento de consulta. La UI de Ops puede decir CRITICAL sobre una pregunta cuyo registro dice MEDIUM, y la notificación enviada dijo MEDIUM. Si el front expone la clasificación persistida en un lado y la calculada en otro, se contradicen visiblemente.
+"Sin resolver = ABIERTA + RESPONDIDA" choca con el peso del tiempo. Separaste responder de resolver para capturar que responder no cierra el caso; pero el score no distingue ambos estados, así que el trabajo ya hecho por el vendedor no baja la prioridad. La distinción de estados existe y el scoring la ignora.
+Estado del pedido como proxy de "todavía se puede corregir" vs. CANCELADO clasificado como terminal: si CANCELADO pesa poco por ser terminal, estás despriorizando justo el caso donde el comprador suele estar más molesto.
+Buyer no es entidad, pero hay búsqueda por comprador. Sin identidad, dos compradores homónimos son el mismo para el filtro, y no hay forma de responder "¿qué más compró este comprador?" —una pregunta natural en un dashboard de ventas. Es un trade-off defendible, pero el filtro por comprador lo tensiona.
+Sin paginación + sin ventana temporal + "recent orders" del enunciado. El enunciado dice recent orders; vos devolvés todos. Coherente internamente, pero es una desviación explícita del texto que conviene justificar.
+3. Qué se rompe primero a 100x
+En orden:
+
+El listado de pedidos completo. Sin paginación ni ventana temporal, se rompe en el payload y en el render del front antes que en el backend. Es el primer cuello, y es el que vos mismo declaraste fuera de alcance.
+El ranking de Ops. Score al vuelo para N preguntas, y cada score necesita el monto del pedido, que a su vez recorre las líneas porque el total no se persiste. Queda O(N·M) por request, recalculado idénticamente en cada llamada, sin memoización y sin nada que dependa realmente de "ahora" salvo un único factor.
+Los filtros por scan lineal. Sin índices por vendedor/estado/fecha, cada request barre todo el store.
+Memoria del store. Todo vivo en heap, sin evicción; y la serialización de colecciones grandes presiona el GC.
+La cola del listener async. Ráfaga de creación de preguntas contra un executor con cola no acotada: o crece sin control o rechaza tareas en silencio. Y como el fallo de canal solo se loguea, las notificaciones perdidas son invisibles.
+Notá que 1 y 2 son consecuencia directa de decisiones que declaraste fuera de alcance. Eso es válido, pero entonces el README debería decir dónde se rompe, no solo que no está implementado.
+
+4. La decisión más discutible
+Tiempo de espera como factor de mayor peso, combinado con el uso dual del score.
+
+Es la decisión central del objetivo #2 —la que el enunciado señala explícitamente como "queremos ver cómo manejás esto"— y es la que tiene más superficie de ataque.
+
+Lo que te preguntaría un evaluador escéptico:
+
+"¿Cómo sumás minutos con pesos y con un booleano? Mostrame las unidades." Sin normalización, la ponderación declarada no es la ponderación efectiva.
+"¿Una consulta de '¿trae cable?' de hace cinco días le gana a 'me llegó roto, quiero devolverlo' de hace diez minutos?" Si la respuesta es sí, tu ranking optimiza antigüedad, no importancia. El nombre del endpoint dice importancia.
+"¿El tiempo satura?" Si crece sin techo, a las dos semanas todo el backlog viejo es CRITICAL y el ranking colapsa a un orden cronológico. La fórmula se vuelve equivalente a ORDER BY fecha ASC y todo el aparato de scoring sobra.
+"¿Por qué el factor más pesado es el único que no cuenta cuando decidís notificar?" Es la contradicción del punto 2, y es la pregunta más incómoda.
+"Si el score se recalcula, ¿por qué persistís la clasificación? Y si la persistís, ¿por qué recalculás?" Necesitás una respuesta clara: uno es registro de por qué se notificó, el otro es vista actual. Si no nombrás esa distinción explícitamente en el modelo y en el README, parece un descuido y no una decisión.
+"¿Qué pasa con el score cuando el vendedor responde?" Si nada, la separación responder/resolver no aporta valor operativo.
+Segundo lugar en discutibilidad: Buyer embebido. Pero esa se defiende en una línea ("no hay caso de uso de identidad de comprador en el alcance"); la de prioridad no.
+
+5. Lo que falta definir y te va a frenar
+Bloqueantes del contrato (definilos antes de la primera línea):
+
+Cómo se identifica al vendedor. ¿/sellers/{id}/orders, query param, header? Condiciona todas las rutas y el estado del front. Cambiarlo después toca todo.
+Idioma del contrato. Tu modelo mezcla LineaPedido/PENDIENTE con nombres en inglés. Los valores de enum viajan en el JSON y se renderizan en la UI: elegí uno y sostenelo en entidades, endpoints y labels, o vas a terminar mapeando de ida y vuelta.
+Formato y semántica de fechas. ISO con offset vs. fecha sola; qué campo filtra el rango; si to es inclusivo hasta fin del día. Esto define el input del front (date pickers) y la query.
+Forma de las respuestas y de los errores. Array plano vs. envelope; formato único de error con código, mensaje y campo. Si no lo fijás, el manejo de errores del front queda ad hoc por endpoint.
+Códigos HTTP por caso: transición inválida, recurso inexistente, validación de payload, producto ajeno al pedido. Sin starter-validation esto es todo manual y conviene tener una política única desde el principio.
+Ids: UUID vs. secuencial. Impacta URLs, seed y legibilidad de la demo.
+CORS: orígenes permitidos, contemplando el dominio proxy del entorno.
+Bloqueantes que afectan al front directamente:
+
+¿El endpoint de Ops es global o por vendedor? Son dos productos distintos y dos pantallas distintas.
+¿La respuesta de Ops expone el score numérico y el desglose por factor, o solo el orden? Esto es clave: el enunciado te pide justificar la importancia, y la forma más contundente de demostrarlo es que la UI muestre por qué una pregunta está arriba. Si el DTO no lo lleva, el front no puede mostrarlo y perdés la evidencia del objetivo #2.
+¿El detalle del pedido trae las preguntas embebidas o hay endpoint separado? Define si el front hace 1 o N+1 requests.
+¿El listado de pedidos incluye agregados (total calculado, cantidad de preguntas sin resolver, máxima prioridad del pedido)? Si no, el front tiene que pedir el detalle de cada fila para pintar un badge. Es la decisión que más te va a doler no haber tomado.
+¿Existe endpoint de creación de preguntas? El comprador no es usuario del sistema, pero sin una forma de crear preguntas no podés demostrar la notificación en vivo. O hay endpoint, o hay un disparador en el seed, o el objetivo #3 queda sin demo.
+Forma de las acciones de escritura: responder (payload y si cambia estado implícitamente), resolver, cambiar estado del pedido. ¿PATCH con estado destino o endpoints de acción? Elegí un estilo y sostenelo en los dos recursos.
+Si el texto de la respuesta del vendedor entra o no al campo evaluado por keywords. Si comparten campo, el vendedor puede subir la prioridad de su propia pregunta al responder.
+No bloqueante pero conviene fijar ya: representación monetaria (tipo, decimales, moneda) y si el total viaja calculado en el DTO. Cambiarlo después toca modelo, scoring, contrato y formateo en el front al mismo tiempo.
+
+YO:
+Escribí el DECISIONS.md del proyecto en base a estas decisiones que
+ya tomé. NO agregues decisiones que yo no haya tomado, no completes
+huecos con supuestos propios, y no cambies ninguna de mis elecciones.
+
+casos borde
+
+Agregar estado de la pregunta en la ponderación
+para evitar contar un minuto como un punto debemos contemplar rangos de tiempo y rangos de precios.
+Los rangos de fecha son inclusivos en ambos extremos. Internamente se expande el límite superior al inicio del día siguiente con comparación estricta, en lugar de truncar la hora del pedido, para no aplicar funciones sobre el campo filtrado. El corte de día se hace en la zona del negocio, no en UTC.
+aplicaremos idempotencia en el emdpoint que actualice los estados y validaciones de cambio de estado en el dominio, como mostraba antes, el flujo de estados de una pregunta es abierta -> respondida -> resuelta, no se puede pasar de abierta a resuelta. lo mismo con los estados de un pedido.
+cierto, no lo dije pero es una validación del negocio que se debe realizar y tenia contemplada pero era entrar en mucho detalle.
+si, es así. una pregunta cancelada pesa mas que una de un pedido pendiente porque seguro que es un tema de devolución de dinero. Reitero, no entre tanto en el detalle sino en que se entienda el concepto a aplicar.
+CORS - Si sera agregado.
+vamos a calcularla al consultar.
+buscador substring, sin acentos, sin distinguir mayúsculas, sobre el nombre y email del comprador.
+error 400 y si, se acepta multiples estados en el filtro.
+lo tendremos en cuenta a la hora de hace el seed se usara el date.now() sumándoles días.
+Puede llegar a pasar porque si manejamos el tiempo en brechas y no en su valor absoluto puede llegar a tener el mismo score que otra en cierto lapso.
+se buscara la palabra urgente solo sobre el campo pregunta y no respuesta.
+El dinero lo manejaremos en decimales(2) con redondeo siempre a favor del comprador.
+No generaremos pedidos por endpoint.
+dada la dimension del proyecto la exceptuamos.
+testeare por separado sin la asincronía, testeo lógica del listener por un lado y publicación de evento por otro.
+dada la dimension del proyecto no lo contemplamos como posibilidad.
+Se sabe que el criterio de tiempo no aporta para la notificación actualmente, porque solo se evalúa en la creación. No importa, lo que importa ahi es demostrar criterio y dejar en decision.md que la intención es en un futuro agregar un proceso automático que cada x tiempo se ejecute, reevalue, verifique notificación previa y notifique. No se hara ahora pero quería dejarlo asentado como evolutivo. Además, es mi intención crear luego un endpoint de creación de preguntas para evidenciar el funcionamiento.
+
+Viene atado al punto anterior, lo que podría cambiarlo de prioridades es el pasar del tiempo o un cambio de estado. pero al calcularse el estado de criticidad al consultar no debería diferir porque lo que se persiste es la pregunta con sus atributos no el score con su clasificación, eso se calcula.
+
+Ya agregamos en casos borde el estado de una pregunta a la ponderación.
+
+Se comento en casos borde, el estado cancelado sera prioritario en tema de ponderación respecto a los demás estados para la criticidad de las preguntas.
+
+Entiendo el caso, pero al no profundizar en la entidad comprador por ser relevante, creamos un filtro adicional con emails del comprador y ya. Para que puedan hacer un filtrado por nombre y mail asi lo distinguen.
+
+Inicialmente no estamos queriendo complejizar la consigna sino ser resolutivos de una forma eficiente y eficaz. Mi ideal seria que haya paginación directo por consulta a la bd, con un filtro de ventanta temporal que traiga las ultimas 24, semana, mes. No se si llegare por eso, por ahora lo dejo solo detallado en el decisions.md
+
+Perfecto, contemplado en el punto anterior, era algo de esperarse.
+Contemplado en la toma de decisiones y se dejara en el decisions.md descripto
+Contemplado, dado el alcance actual y que la consigna no pretende un producto listo para producción son las decisiones de hacer mas pequeña la solución teniendo en cuenta la solución correcta par defenderla en el futuro. Se aclarar en decisions.md de ser necesario que se usaría una base de datos relacional con índices, también cambiaria la metodología para la búsqueda de compradores por ejemplo.
+No tenemos eviccion porque descartar un dato no es perderlo, es cierto que el heap seria el pimer limite y el segundo la tarea pesada del GC en una respuesta serializada grande pero esto se resuelve con paginación y hoy, ahora esta fuera del alcance.
+Contemplado como posibilidad, en caso de producción usaría resiliencia con batches, retries con backoff y jitter, backpressure, DLQ para evitar la caída o perdida silenciosa pero es demasiada infra para una demo, dejaremos detallado esto en el decisions.md
+Mi intención es usar bechas para valores numéricos como fechas o monto, por ejemplo, de 0 a 24hrs desde la pregunta tiene un valor de 10, si lo supera hasta las 72hrs vale 20, pasado eso ya 30, pasada la semana 50, asi lo mismo con el monto, los estados también tienen un valor, cancelado tendrá 30, en envió tendrá 5, asi, son todos números al aire pero para dejar clara la idea.
+
+Eso es keyboard, si se encuentra varias palabras clave aumentara su score, no conozco tanto el negocio pero pondremos "urgente", "roto", "incompleto", "enojado", "maltrato" cosas asi y entre mas haya de eso mayor sera su score, todo con regex, además aca hay un lindo nudo de que también podríamos agregar grupos de palabras que tengan mas valor que otro grupo .. "ofendido" podría ser mas importante que "falto", ponele, no estoy seguro de eso pero es un ejemplo rápido.
+
+Ya ahi igual a no ser que tengas demasiados pedidos, que no es el caso de esta demo, el problema también es operacional y hay que tratar con el vendedor también, no es un buen vendedor quien responde a sus clientes con una demora de dos semanas. Entraria una categorización de vendedores que no esta contemplada actualmente.
+
+ya lo explique antes y quedara detallado en el decisons.md, es proyección.
+
+Si se modifica porque el estado de la pregunta es parte de la ponderación ahora.
+
+/seller/{id}/orders claramente, por ser una entidad no es un filtro que pasaría por query param.
+
+el código se escribe en ingles, los valores del enum viajaran en ingles y el front mapea a labels en español.
+
+sera inclusivo en ambos extremos, sera evaluado en horaio del que consulta, se corta el dia en la zona del negocio. en nuestro caso, UTC-3
+
+eso lo detallo en el siguiente punto cuando desglose los endpoints
+
+UUID, mayor escalabilidad, posibilidad de truncar para demos
+
+Sera agregado el CORS
+
+El endpoint de ops dera global con posibilidad de filtrar por vendedor. Si serán dos pantallas distintas la que vera el vendedor de operaciones.
+
+Podriamos devolver el score y desgloce por factor, no veo porque no, además es util para que operaciones pueda entender y interpretar para mejorarlo.
+
+embebidas, porque los pedidos y preguntas se consultan juntas, si las separamos obligaría al front a hacer dos llamadas. para ops se listaran solo las preguntas sin resolver entonces seria complejizar ese endpoint aumentando la latencia en ambos servicios. (decisions.md)
+
+el listado de pedidos traerá los agregados porque es importante que visualice el vendedor la prioridad de preguntas, para ello ya se calcula el total del pedido, se evalúa si tiene preguntas sin resolver y su score. No se devolverá el score pero si una categoría en base a su score, que sera a definir. por ejemplo: score > 100 = Critica. Supongamos casi.
+
+Existira un endpoint de creación de preguntas, no se aun como lo implementare en el front, quizás solo queda en back pero si para poder demostrar las notificaciones.
+
+Se vera en el desglose de los endpoints en el proximo prompt
+
+En esta ocasión no, lo ideal, seria tener un agente de ia que analice la conversación y en base a su contexto con criterios dados clasifique el mismo la conversación vendedor - comprador, inclusive sacando métricas de satisfacción, trato, etc. Esto seria un ideal que no se alcanza a hacer ahora. Agregar a decisions.md
+
+Representación monetaria, decimal con redondeo y si viaja en los dto.
+
+Formato:
+
+Agrupado por tema: modelo, estados, scoring, notificaciones,
+contrato de la API, fechas y dinero, alcance excluido.
+Cada decisión en una o dos líneas: qué decidí y por qué.
+Donde corresponda, el trade-off aceptado.
+Una sección final "Detectado y no resuelto" con los casos que
+identifiqué pero dejé fuera de alcance, incluyendo cómo los
+resolvería en producción.
+Si detectás que alguna decisión mía quedó ambigua o incompleta,
+NO la resuelvas: listámela aparte al final para que la defina yo.
+
+IA:
+Sorry, there was a network error. Please try again later. Request id: 7836abcf-5b07-451c-9348-4f756ab0a159
+
+Reason: Please check your firewall rules and network connection then try again. Error Code: terminated: Stream closed with error code NGHTTP2_INTERNAL_ERROR.
+
+Dado este error cree este archivo de export.
