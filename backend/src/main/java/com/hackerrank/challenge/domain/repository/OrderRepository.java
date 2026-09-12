@@ -2,6 +2,7 @@ package com.hackerrank.challenge.domain.repository;
 
 import com.hackerrank.challenge.domain.entity.Order;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,19 @@ public interface OrderRepository {
   Order save(Order order);
 
   Optional<Order> findById(UUID id);
+
+  /**
+   * Resuelve varios pedidos en una sola llamada, para no incurrir en un N+1
+   * cuando
+   * hay que traer los pedidos de un conjunto de preguntas.
+   *
+   * <p>
+   * Los ids que no existan simplemente no aparecen en el resultado: decidir si
+   * esa
+   * ausencia es tolerable o un error es responsabilidad de quien llama, no del
+   * repositorio. El orden del resultado no esta garantizado.
+   */
+  List<Order> findAllById(Collection<UUID> ids);
 
   /**
    * Pedidos de un vendedor que cumplen los filtros combinables con AND, ordenados

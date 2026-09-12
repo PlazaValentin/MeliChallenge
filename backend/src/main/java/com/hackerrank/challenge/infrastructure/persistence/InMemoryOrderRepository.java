@@ -6,6 +6,7 @@ import com.hackerrank.challenge.domain.repository.OrderSearchCriteria;
 import org.springframework.stereotype.Repository;
 
 import java.text.Normalizer;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,25 @@ public class InMemoryOrderRepository implements OrderRepository {
   @Override
   public Optional<Order> findById(UUID id) {
     return Optional.ofNullable(store.get(id));
+  }
+
+  /**
+   * Se resuelve mirando el mapa por cada id en vez de recorrer el store y
+   * filtrar,
+   * porque el acceso por clave es directo y el conjunto pedido suele ser mucho
+   * mas
+   * chico que el total de pedidos.
+   */
+  @Override
+  public List<Order> findAllById(Collection<UUID> ids) {
+    if (ids == null || ids.isEmpty()) {
+      return List.of();
+    }
+    return ids.stream()
+        .distinct()
+        .map(store::get)
+        .filter(java.util.Objects::nonNull)
+        .toList();
   }
 
   @Override
