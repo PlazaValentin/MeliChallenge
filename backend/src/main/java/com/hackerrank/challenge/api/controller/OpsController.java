@@ -39,6 +39,8 @@ public class OpsController {
     @GetMapping("/unresolved")
     public ListResponse<UnresolvedQuestionResponse> listUnresolved(
             @RequestParam(required = false) UUID sellerId) {
+        // Sin anotaciones de validacion: el unico parametro es opcional y su formato
+        // ya lo garantiza la conversion a UUID que hace Spring antes de llegar aca.
 
         List<UnresolvedQuestionResponse> items =
                 questionService.listUnresolvedQuestions(sellerId).stream()

@@ -3,12 +3,16 @@ package com.hackerrank.challenge.api.error;
 import com.hackerrank.challenge.domain.exception.BusinessRuleException;
 import com.hackerrank.challenge.domain.exception.DomainValidationException;
 import com.hackerrank.challenge.domain.exception.ResourceNotFoundException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,6 +43,37 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DomainValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidation(DomainValidationException exception) {
         return respond(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    /**
+     * Violaciones de las anotaciones de validacion sobre path variables y query
+     * params. Se listan todas juntas en {@code errors} en vez de cortar en la
+     * primera, para que el frontend pueda marcar todos los campos de una vez.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception) {
+
+        List<ErrorResponse.FieldError> errors = exception.getConstraintViolations().stream()
+                .map(violation -> new ErrorResponse.FieldError(
+                        lastNodeOf(violation), violation.getMessage()))
+                .toList();
+
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, errors));
+    }
+
+    /** Violaciones de las anotaciones de validacion sobre un cuerpo de request. */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidBody(
+            MethodArgumentNotValidException exception) {
+
+        List<ErrorResponse.FieldError> errors = exception.getBindingResult().getFieldErrors().stream()
+                .map(this::toFieldError)
+                .toList();
+
+        return ResponseEntity.badRequest()
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, errors));
     }
 
     /**
@@ -136,6 +171,21 @@ public class ApiExceptionHandler {
         return Arrays.stream(enumType.getEnumConstants())
                 .map(constant -> ((Enum<?>) constant).name())
                 .toList();
+    }
+
+    private ErrorResponse.FieldError toFieldError(FieldError fieldError) {
+        return new ErrorResponse.FieldError(fieldError.getField(), fieldError.getDefaultMessage());
+    }
+
+    /**
+     * Se queda con el ultimo tramo del path de la violacion: el nombre del parametro
+     * viene precedido por el del metodo del controller, que no le dice nada al
+     * cliente.
+     */
+    private String lastNodeOf(ConstraintViolation<?> violation) {
+        String path = violation.getPropertyPath().toString();
+        int lastSeparator = path.lastIndexOf('.');
+        return lastSeparator < 0 ? path : path.substring(lastSeparator + 1);
     }
 
     private ResponseEntity<ErrorResponse> respond(HttpStatus status, String description) {

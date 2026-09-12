@@ -381,6 +381,40 @@ aceptado en cada una.
   paginación sea un cambio en un solo lugar, en línea con que la paginación está
   declarada como próxima prioridad.
 
+## Validación de la entrada
+
+- **`spring-boot-starter-validation` es la única dependencia agregada al
+  scaffold.** Se suma para poder declarar las restricciones de formato como
+  anotaciones sobre los parámetros y los DTOs de entrada, en vez de repartir
+  `if`s de validación por los controllers. Es la implementación estándar de
+  Bean Validation y no arrastra nada propio del proyecto.
+- **La validación de formato vive en la frontera y devuelve `400`.** Es lo
+  primero que se evalúa, antes de llegar al service: lo que no tiene forma
+  válida no entra al sistema. El handler centralizado traduce las violaciones
+  al mismo cuerpo de error que el resto, con un elemento en `errors` por cada
+  restricción incumplida, para que el frontend pueda marcar todos los campos
+  que fallaron en una sola pasada en lugar de descubrirlos de a uno.
+- **La conversión de tipos de Spring es la primera barrera de validación.**
+  Un `UUID`, un `LocalDate` o un valor de enum mal formado falla al convertirse
+  y nunca llega al cuerpo del método: esa conversión ya cubre buena parte de la
+  validación de formato sin necesidad de anotación alguna. Por eso un estado
+  inexistente en el filtro (`?status=EN_ADUANA`) es `400` y no `404`, y por eso
+  los parámetros que solo necesitan tener el tipo correcto no llevan
+  anotaciones: agregarlas sería redundante.
+- **Las reglas que involucran más de un campo se validan explícitamente en el
+  controller.** Bean Validation expresa restricciones sobre un valor, no
+  relaciones entre valores: que `from` no sea posterior a `to` no es una
+  propiedad de ninguno de los dos por separado, así que se verifica a mano y se
+  lanza la excepción de validación del dominio. La alternativa (una anotación
+  a nivel de clase con su propio validador) se descartó por desproporcionada
+  para una única regla.
+- **Cada anotación de validación declara su `message` en español.** Los
+  mensajes por defecto de Hibernate Validator salen en inglés y dependen del
+  `Locale` de la request, que el cliente controla: dejarlos implícitos haría que
+  el idioma de la respuesta varíe según quién llame. Se prefirió el `message`
+  explícito sobre un `ValidationMessages.properties` para que el texto quede a
+  la vista junto a la restricción que lo produce.
+
 ## Frontend
 
 - **Dos vistas separadas, con ejes de lectura distintos:**

@@ -7,7 +7,10 @@ import com.hackerrank.challenge.application.input.OrderFilter;
 import com.hackerrank.challenge.application.service.OrderService;
 import com.hackerrank.challenge.domain.enums.OrderStatus;
 import com.hackerrank.challenge.domain.exception.DomainValidationException;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,8 +28,17 @@ import java.util.UUID;
  * incidental, por ser una entidad del modelo (ver DECISIONS.md).
  */
 @RestController
+@Validated
 @RequestMapping("/api/sellers/{sellerId}/orders")
 public class OrderController {
+
+    /**
+     * Tope del texto de busqueda de comprador. No es una regla de negocio sino un
+     * limite defensivo: mas alla de un nombre y un email no hay nada que buscar, y
+     * acotarlo evita recorrer todos los pedidos comparando contra una cadena
+     * arbitrariamente larga.
+     */
+    private static final int MAX_BUYER_TEXT_LENGTH = 120;
 
     private final OrderService orderService;
 
@@ -50,11 +62,13 @@ public class OrderController {
      */
     @GetMapping
     public ListResponse<OrderSummaryResponse> listOrders(
-            @PathVariable UUID sellerId,
+            @PathVariable @NotNull UUID sellerId,
             @RequestParam(name = "status", required = false) Set<OrderStatus> statuses,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) String buyer) {
+            @RequestParam(required = false) @Size(
+                    max = MAX_BUYER_TEXT_LENGTH,
+                    message = "No puede superar los {max} caracteres.") String buyer) {
 
         requireValidRange(from, to);
 
@@ -71,11 +85,18 @@ public class OrderController {
      * vendedor de la ruta: uno que pertenezca a otro vendedor responde 404.
      */
     @GetMapping("/{orderId}")
-    public OrderDetailResponse getOrder(@PathVariable UUID sellerId, @PathVariable UUID orderId) {
+    public OrderDetailResponse getOrder(
+            @PathVariable @NotNull UUID sellerId,
+            @PathVariable @NotNull UUID orderId) {
+
         return OrderDetailResponse.from(orderService.findOrderDetail(sellerId, orderId));
     }
 
-    /** Un rango al reves no es una busqueda sin resultados, es una consulta mal armada. */
+    /**
+     * Se valida a mano porque involucra dos campos: ninguna anotacion de campo puede
+     * expresar que un valor sea coherente con otro. Un rango al reves no es una
+     * busqueda sin resultados, es una consulta mal armada.
+     */
     private void requireValidRange(LocalDate from, LocalDate to) {
         if (from != null && to != null && from.isAfter(to)) {
             throw new DomainValidationException(
