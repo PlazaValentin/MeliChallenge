@@ -366,6 +366,20 @@ aceptado en cada una.
   thread-safety en `save`/`findById`; los métodos de listado son lecturas sobre
   una vista de los valores en un momento dado, sin necesidad de bloqueo
   adicional para esta escala.
+- **`application` contiene los casos de uso**, un servicio por agregado
+  (`OrderService`, `QuestionService`), con `application/input` y
+  `application/output` para lo que cruza el borde de la capa. Los servicios
+  orquestan y no calculan: el filtrado lo resuelve el repositorio, la validación
+  de transiciones vive en el enum de estado y el score lo provee
+  `domain/rules/scoring`.
+- **`api` contiene la capa web**, separada en `api/controller`, `api/dto` y
+  `api/error`. Los controllers no exponen entidades de dominio ni los objetos de
+  `application/output`: siempre mapean a un DTO propio, para que un cambio en el
+  modelo no rompa el contrato publicado sin que nadie lo note.
+- **Los listados usan un envoltorio genérico con `items`**, no el nombre del
+  recurso: permite un único tipo reutilizable y que agregar metadata de
+  paginación sea un cambio en un solo lugar, en línea con que la paginación está
+  declarada como próxima prioridad.
 
 ## Frontend
 
