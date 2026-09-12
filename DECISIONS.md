@@ -306,6 +306,25 @@ aceptado en cada una.
   agregar latencia a un endpoint que tiene un propósito distinto.
 - **Dinero en los DTOs:** viaja como decimal con 2 posiciones.
 
+## Estructura del proyecto (backend)
+
+- **`domain` contiene entidades, enums, reglas de negocio y excepciones**, y se
+  organiza en subpaquetes por tipo de pieza:
+  - `domain/entity` — entidades y objetos de valor del modelo (`Order`,
+    `OrderLine`, `Question`, `Product`, `Seller`, `Buyer`).
+  - `domain/enums` — enums del dominio (`OrderStatus`, `QuestionStatus`).
+  - `domain/exception` — excepciones propias del dominio
+    (`DomainValidationException`, `BusinessRuleException`).
+- **Las reglas de transición viven dentro del propio enum de estado**, no en un
+  paquete aparte: el ciclo de vida es parte de la definición del estado, y
+  separarlo dejaría un enum anémico y la regla huérfana de su contexto. El lugar
+  para reglas de negocio que no pertenezcan a una única entidad (por ejemplo el
+  scoring) es un paquete propio, no el enum.
+- **Las entidades protegen sus invariantes**: no hay setters de estado y la única
+  vía de cambio son métodos de negocio que validan la transición, de modo que no
+  sea posible construir ni dejar un recurso en un estado inválido desde afuera.
+- Esta estructura se respeta de acá en adelante para las capas que se agreguen.
+
 ## Frontend
 
 - **Dos vistas separadas, con ejes de lectura distintos:**
