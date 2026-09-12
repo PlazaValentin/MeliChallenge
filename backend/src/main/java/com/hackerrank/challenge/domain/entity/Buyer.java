@@ -5,8 +5,10 @@ import com.hackerrank.challenge.domain.exception.DomainValidationException;
 /**
  * Datos del comprador embebidos en el pedido.
  *
- * <p>Deliberadamente no es una entidad: no tiene id ni identidad entre pedidos. El
- * email se conserva para poder distinguir compradores homonimos en la busqueda por
+ * <p>
+ * Deliberadamente no es una entidad: no tiene id ni identidad entre pedidos. El
+ * email se conserva para poder distinguir compradores homonimos en la busqueda
+ * por
  * texto libre del listado.
  */
 public record Buyer(String name, String email) {

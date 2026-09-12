@@ -6,11 +6,14 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * Linea de un pedido: un producto, su cantidad y el precio unitario al momento de
+ * Linea de un pedido: un producto, su cantidad y el precio unitario al momento
+ * de
  * la compra.
  *
- * <p>El nombre del producto se copia junto al precio: la linea es un registro
- * historico de lo que se compro, no una vista del catalogo actual. Si el vendedor
+ * <p>
+ * El nombre del producto se copia junto al precio: la linea es un registro
+ * historico de lo que se compro, no una vista del catalogo actual. Si el
+ * vendedor
  * renombra o repreciar el producto, los pedidos ya emitidos no cambian.
  */
 public final class OrderLine {

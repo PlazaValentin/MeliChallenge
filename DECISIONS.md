@@ -324,6 +324,27 @@ aceptado en cada una.
   vía de cambio son métodos de negocio que validan la transición, de modo que no
   sea posible construir ni dejar un recurso en un estado inválido desde afuera.
 - Esta estructura se respeta de acá en adelante para las capas que se agreguen.
+- **Patrón repository:** el contrato (`OrderRepository`, `QuestionRepository`,
+  `ProductRepository`, `SellerRepository`) vive en `domain/repository`; la
+  implementación en memoria vive en `infrastructure/persistence`. Un repositorio
+  por agregado (`Order` y `Question`); `Product` y `Seller` tienen el suyo solo
+  para poder cargar el seed, sin más operaciones que `save` / `findById` /
+  `findAll` porque el contrato de la API no expone catálogo ni alta de
+  vendedores.
+- **Los filtros del listado de pedidos viven en el repositorio**
+  (`OrderSearchCriteria`, resuelto por `findBySeller`), no en el service: es lo
+  que haría una base de datos real, y contiene el cambio si el día de mañana se
+  migra a una consulta SQL.
+- **`QuestionRepository` no filtra por vendedor.** `Question` solo conoce su
+  `orderId`, no el vendedor del pedido. El filtro `sellerId` de la cola de
+  Operaciones se resuelve orquestando en el service: se listan las preguntas sin
+  resolver y se cruzan con `OrderRepository.findBySeller` cuando corresponda. Se
+  prefirió esto a que un repositorio dependa de otro, para no acoplar la
+  persistencia de preguntas a la de pedidos.
+- **Persistencia in-memory con `ConcurrentHashMap`.** Alcanza para
+  thread-safety en `save`/`findById`; los métodos de listado son lecturas sobre
+  una vista de los valores en un momento dado, sin necesidad de bloqueo
+  adicional para esta escala.
 
 ## Frontend
 

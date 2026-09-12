@@ -5,7 +5,8 @@ package com.hackerrank.challenge.domain.exception;
  * son sintacticamente correctos, pero cuya operacion no es admisible en el
  * estado actual del dominio (ej. una transicion de estado invalida).
  *
- * <p>El handler centralizado de errores mapea esta excepcion a HTTP 409.
+ * <p>
+ * El handler centralizado de errores mapea esta excepcion a HTTP 409.
  */
 public class BusinessRuleException extends RuntimeException {
 

@@ -15,7 +15,8 @@ import java.util.Set;
  * CONFIRMED -> CANCELLED
  * </pre>
  *
- * <p>DELIVERED y CANCELLED son terminales. Ningun estado admite transicion hacia
+ * <p>
+ * DELIVERED y CANCELLED son terminales. Ningun estado admite transicion hacia
  * si mismo: pedir el estado actual es una transicion invalida, no un no-op.
  */
 public enum OrderStatus {

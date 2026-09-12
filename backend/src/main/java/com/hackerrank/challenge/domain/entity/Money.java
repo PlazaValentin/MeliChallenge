@@ -8,8 +8,11 @@ import java.math.BigDecimal;
  * Reglas comunes de representacion monetaria: decimal con dos posiciones y sin
  * valores negativos.
  *
- * <p>No se aplica redondeo: cantidad por precio unitario no genera decimales nuevos
- * y la suma de subtotales tampoco, asi que se exige que el valor de entrada ya tenga
+ * <p>
+ * No se aplica redondeo: cantidad por precio unitario no genera decimales
+ * nuevos
+ * y la suma de subtotales tampoco, asi que se exige que el valor de entrada ya
+ * tenga
  * la escala correcta en lugar de corregirlo silenciosamente.
  */
 final class Money {

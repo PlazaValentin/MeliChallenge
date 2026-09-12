@@ -8,7 +8,8 @@ import java.util.UUID;
 /**
  * Vendedor: dueno de un catalogo de productos y de los pedidos que recibe.
  *
- * <p>El email es el destinatario de las notificaciones de preguntas prioritarias.
+ * <p>
+ * El email es el destinatario de las notificaciones de preguntas prioritarias.
  */
 public final class Seller {
 

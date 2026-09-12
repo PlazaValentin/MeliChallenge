@@ -13,12 +13,16 @@ import java.util.UUID;
  * Pregunta del comprador sobre un pedido, opcionalmente referida a un producto
  * puntual de ese pedido.
  *
- * <p>Admite una sola respuesta: es un turno de la conversacion, no un hilo. Si el
+ * <p>
+ * Admite una sola respuesta: es un turno de la conversacion, no un hilo. Si el
  * comprador necesita repreguntar, crea otra pregunta sobre el mismo pedido.
  *
- * <p>Se construye unicamente con {@link #on(Order, UUID, String, Instant)}, que
- * recibe el pedido para poder verificar que el producto referenciado le pertenezca.
- * Ese chequeo no puede hacerse teniendo solo el {@code orderId}, y es la razon por la
+ * <p>
+ * Se construye unicamente con {@link #on(Order, UUID, String, Instant)}, que
+ * recibe el pedido para poder verificar que el producto referenciado le
+ * pertenezca.
+ * Ese chequeo no puede hacerse teniendo solo el {@code orderId}, y es la razon
+ * por la
  * que no hay constructor publico.
  */
 public final class Question {
@@ -43,7 +47,8 @@ public final class Question {
     /**
      * Crea una pregunta sobre un pedido.
      *
-     * <p>Se permite preguntar sobre pedidos en estado terminal: que el pedido este
+     * <p>
+     * Se permite preguntar sobre pedidos en estado terminal: que el pedido este
      * cerrado no significa que el post-venta lo este.
      *
      * @param productId opcional; si viene, debe ser un producto de ese pedido.
@@ -74,7 +79,9 @@ public final class Question {
         return orderId;
     }
 
-    /** Vacio cuando la pregunta es sobre el pedido en general y no sobre un item. */
+    /**
+     * Vacio cuando la pregunta es sobre el pedido en general y no sobre un item.
+     */
     public Optional<UUID> getProductId() {
         return Optional.ofNullable(productId);
     }
@@ -102,7 +109,8 @@ public final class Question {
     /**
      * Registra la respuesta del vendedor y pasa la pregunta a ANSWERED.
      *
-     * <p>Una pregunta ya respondida no admite otra respuesta: la transicion falla y
+     * <p>
+     * Una pregunta ya respondida no admite otra respuesta: la transicion falla y
      * el texto anterior queda intacto.
      */
     public void answer(String text) {
@@ -113,7 +121,10 @@ public final class Question {
         this.answerText = text.trim();
     }
 
-    /** Cierre explicito por parte del vendedor. Solo se puede resolver lo respondido. */
+    /**
+     * Cierre explicito por parte del vendedor. Solo se puede resolver lo
+     * respondido.
+     */
     public void resolve() {
         transitionTo(QuestionStatus.RESOLVED);
     }

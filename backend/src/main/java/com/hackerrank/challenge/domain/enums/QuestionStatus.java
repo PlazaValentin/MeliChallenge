@@ -13,8 +13,10 @@ import java.util.Set;
  * OPEN -> ANSWERED -> RESOLVED
  * </pre>
  *
- * <p>Estrictamente secuencial: no se admite OPEN -> RESOLVED. Responder y resolver
- * son dos acciones distintas del vendedor. Operaciones considera "sin resolver" a
+ * <p>
+ * Estrictamente secuencial: no se admite OPEN -> RESOLVED. Responder y resolver
+ * son dos acciones distintas del vendedor. Operaciones considera "sin resolver"
+ * a
  * OPEN y ANSWERED.
  */
 public enum QuestionStatus {

@@ -9,8 +9,10 @@ import java.util.UUID;
 /**
  * Producto del catalogo de un vendedor.
  *
- * <p>El precio de catalogo es el precio vigente hoy; no es el que se factura. Al
- * comprar, la linea del pedido copia el precio del momento, de modo que un cambio
+ * <p>
+ * El precio de catalogo es el precio vigente hoy; no es el que se factura. Al
+ * comprar, la linea del pedido copia el precio del momento, de modo que un
+ * cambio
  * de catalogo posterior no altera pedidos ya realizados.
  */
 public final class Product {

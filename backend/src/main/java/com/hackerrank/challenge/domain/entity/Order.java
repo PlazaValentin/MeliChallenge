@@ -14,12 +14,17 @@ import java.util.UUID;
 /**
  * Pedido recibido por un vendedor.
  *
- * <p>Nace siempre en {@link OrderStatus#PENDING} y solo cambia de estado a traves de
- * {@link #transitionTo(OrderStatus)}, que valida la transicion contra el ciclo de
- * vida. No hay setter de estado: no es posible construir ni dejar un pedido en un
+ * <p>
+ * Nace siempre en {@link OrderStatus#PENDING} y solo cambia de estado a traves
+ * de
+ * {@link #transitionTo(OrderStatus)}, que valida la transicion contra el ciclo
+ * de
+ * vida. No hay setter de estado: no es posible construir ni dejar un pedido en
+ * un
  * estado al que no se pueda llegar legitimamente.
  *
- * <p>Las preguntas no se guardan aca: se referencian por {@code orderId} desde
+ * <p>
+ * Las preguntas no se guardan aca: se referencian por {@code orderId} desde
  * {@link Question}. El total tampoco se persiste, se deriva de las lineas.
  */
 public final class Order {
@@ -32,8 +37,10 @@ public final class Order {
     private OrderStatus status;
 
     /**
-     * @param createdAt fecha de la compra; se recibe desde afuera para que el dataset
-     *                  pre-cargado pueda representar pedidos de distinta antiguedad.
+     * @param createdAt fecha de la compra; se recibe desde afuera para que el
+     *                  dataset
+     *                  pre-cargado pueda representar pedidos de distinta
+     *                  antiguedad.
      */
     public Order(UUID id, UUID sellerId, Buyer buyer, List<OrderLine> lines, Instant createdAt) {
         if (id == null) {
@@ -98,7 +105,10 @@ public final class Order {
         return sellerId.equals(candidateSellerId);
     }
 
-    /** Indica si el pedido incluye ese producto, para validar preguntas sobre un item. */
+    /**
+     * Indica si el pedido incluye ese producto, para validar preguntas sobre un
+     * item.
+     */
     public boolean containsProduct(UUID productId) {
         return productId != null
                 && lines.stream().anyMatch(line -> line.getProductId().equals(productId));
@@ -107,8 +117,10 @@ public final class Order {
     /**
      * Avanza el pedido al estado destino.
      *
-     * <p>Pedir el estado actual tambien es invalido: el ciclo de vida no define
-     * transiciones hacia si mismo, asi que se rechaza en lugar de tratarse como no-op.
+     * <p>
+     * Pedir el estado actual tambien es invalido: el ciclo de vida no define
+     * transiciones hacia si mismo, asi que se rechaza en lugar de tratarse como
+     * no-op.
      */
     public void transitionTo(OrderStatus target) {
         if (target == null) {
