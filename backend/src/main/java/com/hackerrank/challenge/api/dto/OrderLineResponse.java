@@ -11,18 +11,18 @@ import java.util.UUID;
  * (ver DECISIONS.md).
  */
 public record OrderLineResponse(
-        UUID productId,
-        String productName,
-        int quantity,
-        BigDecimal unitPrice,
-        BigDecimal lineTotal) {
+    UUID productId,
+    String productName,
+    int quantity,
+    BigDecimal unitPrice,
+    BigDecimal lineTotal) {
 
-    public static OrderLineResponse from(OrderLine line) {
-        return new OrderLineResponse(
-                line.getProductId(),
-                line.getProductName(),
-                line.getQuantity(),
-                line.getUnitPrice(),
-                line.getLineTotal());
-    }
+  public static OrderLineResponse from(OrderLine line) {
+    return new OrderLineResponse(
+        line.getProductId(),
+        line.getProductName(),
+        line.getQuantity(),
+        line.getUnitPrice(),
+        line.getLineTotal());
+  }
 }

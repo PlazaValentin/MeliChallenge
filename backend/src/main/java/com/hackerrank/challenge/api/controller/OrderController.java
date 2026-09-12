@@ -32,55 +32,53 @@ import java.util.UUID;
 @RequestMapping("/api/sellers/{sellerId}/orders")
 public class OrderController {
 
-    /**
-     * Tope del texto de busqueda de comprador. No es una regla de negocio sino un
-     * limite defensivo: mas alla de un nombre y un email no hay nada que buscar, y
-     * acotarlo evita recorrer todos los pedidos comparando contra una cadena
-     * arbitrariamente larga.
-     */
-    private static final int MAX_BUYER_TEXT_LENGTH = 120;
+  /**
+   * Tope del texto de busqueda de comprador. No es una regla de negocio sino un
+   * limite defensivo: mas alla de un nombre y un email no hay nada que buscar, y
+   * acotarlo evita recorrer todos los pedidos comparando contra una cadena
+   * arbitrariamente larga.
+   */
+  private static final int MAX_BUYER_TEXT_LENGTH = 120;
 
-    private final OrderService orderService;
+  private final OrderService orderService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+  public OrderController(OrderService orderService) {
+    this.orderService = orderService;
+  }
 
-    /**
-     * Listado de pedidos del vendedor, con filtros combinables con AND.
-     *
-     * <p>
-     * El estado se repite en el query string para pasar varios
-     * ({@code ?status=PENDING&status=SHIPPED}); un valor que no pertenece al ciclo
-     * de vida no llega hasta aca: Spring falla al convertirlo y el handler lo
-     * traduce a 400. Un estado valido sin resultados devuelve 200 con lista vacia.
-     *
-     * <p>
-     * Las fechas entran como {@code LocalDate} y se pasan tal cual: expandir el
-     * rango a instantes en la zona horaria del negocio es responsabilidad del
-     * service, no del borde HTTP.
-     */
-    @GetMapping
-    public ListResponse<OrderSummaryResponse> listOrders(
-            @PathVariable @NotNull UUID sellerId,
-            @RequestParam(name = "status", required = false) Set<OrderStatus> statuses,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
-            @RequestParam(required = false) @Size(
-                    max = MAX_BUYER_TEXT_LENGTH,
-                    message = "No puede superar los {max} caracteres.") String buyer) {
+  /**
+   * Listado de pedidos del vendedor, con filtros combinables con AND.
+   *
+   * <p>
+   * El estado se repite en el query string para pasar varios
+   * ({@code ?status=PENDING&status=SHIPPED}); un valor que no pertenece al ciclo
+   * de vida no llega hasta aca: Spring falla al convertirlo y el handler lo
+   * traduce a 400. Un estado valido sin resultados devuelve 200 con lista vacia.
+   *
+   * <p>
+   * Las fechas entran como {@code LocalDate} y se pasan tal cual: expandir el
+   * rango a instantes en la zona horaria del negocio es responsabilidad del
+   * service, no del borde HTTP.
+   */
+  @GetMapping
+  public ListResponse<OrderSummaryResponse> listOrders(
+      @PathVariable @NotNull UUID sellerId,
+      @RequestParam(name = "status", required = false) Set<OrderStatus> statuses,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(required = false) @Size(max = MAX_BUYER_TEXT_LENGTH, message = "No puede superar los {max} caracteres.") String buyer) {
 
-        requireValidRange(from, to);
+    requireValidRange(from, to);
 
-        OrderFilter filter = new OrderFilter(normalize(statuses), from, to, buyer);
-        List<OrderSummaryResponse> items = orderService.listSellerOrders(sellerId, filter).stream()
-                .map(OrderSummaryResponse::from)
-                .toList();
+    OrderFilter filter = new OrderFilter(normalize(statuses), from, to, buyer);
+    List<OrderSummaryResponse> items = orderService.listSellerOrders(sellerId, filter).stream()
+        .map(OrderSummaryResponse::from)
+        .toList();
 
-        return ListResponse.of(items);
-    }
+    return ListResponse.of(items);
+  }
 
-    /**
+  /**
      * Detalle del pedido con sus lineas y preguntas. El pedido se busca dentro del
      * vendedor de la ruta: uno que pertenezca a otro vendedor responde 404.
      */
@@ -92,16 +90,18 @@ public class OrderController {
         return OrderDetailResponse.from(orderService.findOrderDetail(sellerId, orderId));
     }
 
-    /**
-     * Se valida a mano porque involucra dos campos: ninguna anotacion de campo puede
-     * expresar que un valor sea coherente con otro. Un rango al reves no es una
-     * busqueda sin resultados, es una consulta mal armada.
-     */
-    private void requireValidRange(LocalDate from, LocalDate to) {
-        if (from != null && to != null && from.isAfter(to)) {
-            throw new DomainValidationException(
-                    "La fecha desde no puede ser posterior a la fecha hasta.");
-        }
+  /**
+   * Se valida a mano porque involucra dos campos: ninguna anotacion de campo
+   * puede
+   * expresar que un valor sea coherente con otro. Un rango al reves no es una
+   * busqueda sin resultados, es una consulta mal armada.
+   */
+
+  if (from != null && to != null
+
+   
+
+      }
     }
 
     /** Preserva el orden de llegada para que el filtro sea estable al depurar. */
@@ -109,3 +109,8 @@ public class OrderController {
         return statuses == null || statuses.isEmpty() ? null : new LinkedHashSet<>(statuses);
     }
 }
+
+
+  
+
+  

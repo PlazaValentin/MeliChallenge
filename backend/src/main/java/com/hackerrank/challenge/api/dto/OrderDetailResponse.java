@@ -16,7 +16,8 @@ import java.util.UUID;
  *
  * <p>
  * Va sin envoltorio porque es un recurso unico, no un listado: el envelope
- * existe para poder agregarle paginacion a una coleccion, y aca no hay coleccion
+ * existe para poder agregarle paginacion a una coleccion, y aca no hay
+ * coleccion
  * que paginar.
  *
  * <p>
@@ -24,29 +25,29 @@ import java.util.UUID;
  * mostrarse sin haber pasado antes por el listado.
  */
 public record OrderDetailResponse(
-        UUID id,
-        OrderStatus status,
-        Instant createdAt,
-        BuyerResponse buyer,
-        List<OrderLineResponse> lines,
-        BigDecimal totalAmount,
-        boolean hasPendingQuestions,
-        QuestionPriority priority,
-        List<QuestionResponse> questions) {
+    UUID id,
+    OrderStatus status,
+    Instant createdAt,
+    BuyerResponse buyer,
+    List<OrderLineResponse> lines,
+    BigDecimal totalAmount,
+    boolean hasPendingQuestions,
+    QuestionPriority priority,
+    List<QuestionResponse> questions) {
 
-    public static OrderDetailResponse from(OrderDetail detail) {
-        Order order = detail.order();
-        OrderAggregates aggregates = detail.aggregates();
+  public static OrderDetailResponse from(OrderDetail detail) {
+    Order order = detail.order();
+    OrderAggregates aggregates = detail.aggregates();
 
-        return new OrderDetailResponse(
-                order.getId(),
-                order.getStatus(),
-                order.getCreatedAt(),
-                BuyerResponse.from(order.getBuyer()),
-                order.getLines().stream().map(OrderLineResponse::from).toList(),
-                aggregates.totalAmount(),
-                aggregates.hasPendingQuestions(),
-                aggregates.priority().orElse(null),
-                detail.questions().stream().map(QuestionResponse::from).toList());
-    }
+    return new OrderDetailResponse(
+        order.getId(),
+        order.getStatus(),
+        order.getCreatedAt(),
+        BuyerResponse.from(order.getBuyer()),
+        order.getLines().stream().map(OrderLineResponse::from).toList(),
+        aggregates.totalAmount(),
+        aggregates.hasPendingQuestions(),
+        aggregates.priority().orElse(null),
+        detail.questions().stream().map(QuestionResponse::from).toList());
+  }
 }

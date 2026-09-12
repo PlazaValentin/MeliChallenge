@@ -193,6 +193,19 @@ aceptado en cada una.
   reconoce que, al ponderar tiempo por brechas y no por valor absoluto,
   dos preguntas pueden caer en la misma brecha y por lo tanto empatar en
   score real, no solo en teoría.
+- **El orden de declaración de las categorías de prioridad es significativo.**
+  Van de menos a más grave y la prioridad del pedido se deriva tomando el máximo
+  según ese orden natural, así que reordenarlas cambiaría el cálculo en silencio,
+  sin romper la compilación ni fallar en ningún lado. Queda advertido en el
+  propio enum.
+- **Un pedido sin preguntas sin resolver no tiene prioridad**, y eso es distinto
+  de tener prioridad baja: "sin preguntas" y "preguntas triviales" no son lo
+  mismo, y colapsarlos le mentiría al vendedor. El campo viaja vacío.
+- **El flag de preguntas pendientes y la prioridad no miran el mismo conjunto.**
+  El flag es "respondiste / no respondiste" y solo mira las `OPEN`; la prioridad
+  se calcula sobre las sin resolver (`OPEN` y `ANSWERED`), que son las que siguen
+  en el radar de Operaciones. Un pedido con todas sus preguntas respondidas pero
+  ninguna resuelta tiene el flag apagado y, aun así, prioridad presente.
 
 ## Notificaciones
 
@@ -291,9 +304,17 @@ aceptado en cada una.
 - **Clasificación única compartida** entre la vista de Operaciones y la
   del vendedor: mantener un solo set de valores facilita la comunicación y
   el entendimiento entre ambos equipos.
+- **El detalle del pedido se busca dentro del vendedor de la ruta.** Un pedido
+  que existe pero pertenece a otro vendedor responde `404`, con el mismo mensaje
+  que uno inexistente: distinguirlos confirmaría la existencia de un pedido
+  ajeno. No es control de acceso (sigue sin haber login) sino coherencia del
+  recurso: si el `sellerId` de la URL no se usara para resolver el pedido, la
+  jerarquía de la ruta sería decorativa.
 - **El ítem de la cola de Operaciones trae `sellerId` y `orderId`**, lo
   mínimo para poder ir a buscar el detalle del pedido desde el botón "ver
-  detalle". El detalle del pedido y el chat vendedor-comprador son
+  detalle". Suma además el estado y el monto de ese pedido, que son dos de los
+  factores del score, para no tener que abrir el detalle solo para entender por
+  qué una pregunta puntuó como puntuó. El detalle del pedido y el chat vendedor-comprador son
   componentes aparte, reutilizados entre ambas vistas; la diferencia es que
   Operaciones no puede escribir en el chat: solo el vendedor responde las
   dudas del comprador. Un evolutivo posible sería que Operaciones también
@@ -380,6 +401,47 @@ aceptado en cada una.
   recurso: permite un único tipo reutilizable y que agregar metadata de
   paginación sea un cambio en un solo lugar, en línea con que la paginación está
   declarada como próxima prioridad.
+- **Tres tipos de excepción, uno por causa**: `DomainValidationException` (el
+  dato de entrada está mal formado o viola una invariante) → `400`,
+  `ResourceNotFoundException` (el id es válido pero no existe) → `404`, y
+  `BusinessRuleException` (el recurso existe pero la operación no es admisible
+  en su estado actual) → `409`. Las tres viven en `domain/exception`: son
+  conceptos del dominio, y el mapeo a HTTP lo hace la capa web, no ellas.
+- **Una violación de integridad no es un `404`.** Si una pregunta referencia un
+  pedido inexistente, el problema es del sistema y no de quien consulta:
+  responder `404` le atribuiría al cliente un error que no cometió. Se corta con
+  un error no contemplado (`500`) en lugar de filtrar la fila en silencio, que
+  dejaría a Operaciones viendo menos trabajo del que hay sin que nadie se entere.
+- **Dinero serializado con dos decimales en un solo lugar.** `BigDecimal`
+  conserva la escala con la que fue construido, así que un importe redondo
+  saldría con un decimal según de dónde venga el valor. Se resuelve con un
+  serializador global y no campo por campo, para que ningún importe nuevo pueda
+  olvidarse de aplicarlo.
+
+## Datos de arranque
+
+- **El dataset vive en un JSON en `resources` y se carga al iniciar la app**,
+  construyendo cada entidad a través de los constructores y factories del
+  dominio. Las mismas invariantes que protegen a la API validan también el seed:
+  un dataset que no podría existir vía API tampoco puede existir precargado.
+- **La carga se activa por configuración** (`app.seed.enabled`), sin valor por
+  defecto en el código: la propiedad tiene que estar declarada para que el seed
+  corra. Se prefirió esto a un default implícito para que el comportamiento sea
+  visible en `application.properties` y no haya que leer una anotación para
+  saber si hay datos precargados.
+- **Reconstruir una entidad existente es un camino distinto de crearla.** Las
+  preguntas del seed tienen ids fijos y legibles, así que además de la factory
+  de creación (que genera el id) hay una de reconstitución (que lo recibe),
+  con las mismas validaciones. Se prefirió eso a forzar el id por reflexión, que
+  saltea el control de la propia entidad, y a generar ids aleatorios, que haría
+  imposible referenciar un caso puntual del dataset.
+- **El dataset se diseña por cobertura, no por volumen.** Cada pregunta existe
+  para aislar un factor distinto del scoring; si dos puntúan parecido por las
+  mismas razones, una sobra. Cubre los cuatro tramos de espera y de monto, los
+  cinco estados de pedido, los tres de pregunta y las cuatro categorías de
+  prioridad, e incluye tanto un caso que supera el umbral de notificación como
+  un pedido con varias preguntas sin resolver de scores contrastantes, para que
+  se vea que la prioridad del pedido es el máximo y no la suma.
 
 ## Validación de la entrada
 

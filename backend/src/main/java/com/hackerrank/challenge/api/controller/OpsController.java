@@ -20,33 +20,33 @@ import java.util.UUID;
 @RequestMapping("/api/ops/questions")
 public class OpsController {
 
-    private final QuestionService questionService;
+  private final QuestionService questionService;
 
-    public OpsController(QuestionService questionService) {
-        this.questionService = questionService;
-    }
+  public OpsController(QuestionService questionService) {
+    this.questionService = questionService;
+  }
 
-    /**
-     * Preguntas sin resolver ({@code OPEN} y {@code ANSWERED}) de todos los
-     * vendedores, ordenadas por importancia y, ante empate, la mas antigua primero.
-     *
-     * <p>
-     * Es global por defecto: el {@code sellerId} es un filtro opcional, no parte de
-     * la ruta, porque esta pantalla existe justamente para cruzar vendedores.
-     * Filtrar por un vendedor inexistente responde 404, igual que en el resto de la
-     * API.
-     */
-    @GetMapping("/unresolved")
-    public ListResponse<UnresolvedQuestionResponse> listUnresolved(
-            @RequestParam(required = false) UUID sellerId) {
-        // Sin anotaciones de validacion: el unico parametro es opcional y su formato
-        // ya lo garantiza la conversion a UUID que hace Spring antes de llegar aca.
+  /**
+   * Preguntas sin resolver ({@code OPEN} y {@code ANSWERED}) de todos los
+   * vendedores, ordenadas por importancia y, ante empate, la mas antigua primero.
+   *
+   * <p>
+   * Es global por defecto: el {@code sellerId} es un filtro opcional, no parte de
+   * la ruta, porque esta pantalla existe justamente para cruzar vendedores.
+   * Filtrar por un vendedor inexistente responde 404, igual que en el resto de la
+   * API.
+   */
+  @GetMapping("/unresolved")
+  public ListResponse<UnresolvedQuestionResponse> listUnresolved(
+      @RequestParam(required = false) UUID sellerId) {
+    // Sin anotaciones de validacion: el unico parametro es opcional y su formato
+    // ya lo garantiza la conversion a UUID que hace Spring antes de llegar aca.
+    
+    List<UnresolvedQuestionResponse> items =
 
-        List<UnresolvedQuestionResponse> items =
-                questionService.listUnresolvedQuestions(sellerId).stream()
-                        .map(UnresolvedQuestionResponse::from)
-                        .toList();
+                    .map(UnresolvedQuestionR         .toList();
+        
+        nse.of(ite
 
-        return ListResponse.of(items);
-    }
-}
+    
+  

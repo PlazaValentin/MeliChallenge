@@ -19,29 +19,30 @@ import java.util.UUID;
  * para leer de un vistazo (ver DECISIONS.md).
  *
  * @param priority nulo cuando el pedido no tiene preguntas sin resolver. No se
- *                 colapsa a {@code LOW}: "sin preguntas" y "preguntas triviales"
+ *                 colapsa a {@code LOW}: "sin preguntas" y "preguntas
+ *                 triviales"
  *                 no son lo mismo.
  */
 public record OrderSummaryResponse(
-        UUID id,
-        OrderStatus status,
-        Instant createdAt,
-        BuyerResponse buyer,
-        BigDecimal totalAmount,
-        boolean hasPendingQuestions,
-        QuestionPriority priority) {
+    UUID id,
+    OrderStatus status,
+    Instant createdAt,
+    BuyerResponse buyer,
+    BigDecimal totalAmount,
+    boolean hasPendingQuestions,
+    QuestionPriority priority) {
 
-    public static OrderSummaryResponse from(SellerOrderSummary summary) {
-        Order order = summary.order();
-        OrderAggregates aggregates = summary.aggregates();
+  public static OrderSummaryResponse from(SellerOrderSummary summary) {
+    Order order = summary.order();
+    OrderAggregates aggregates = summary.aggregates();
 
-        return new OrderSummaryResponse(
-                order.getId(),
-                order.getStatus(),
-                order.getCreatedAt(),
-                BuyerResponse.from(order.getBuyer()),
-                aggregates.totalAmount(),
-                aggregates.hasPendingQuestions(),
-                aggregates.priority().orElse(null));
-    }
+    return new OrderSummaryResponse(
+        order.getId(),
+        order.getStatus(),
+        order.getCreatedAt(),
+        BuyerResponse.from(order.getBuyer()),
+        aggregates.totalAmount(),
+        aggregates.hasPendingQuestions(),
+        aggregates.priority().orElse(null));
+  }
 }

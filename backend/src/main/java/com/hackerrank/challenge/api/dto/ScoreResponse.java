@@ -17,31 +17,31 @@ import com.hackerrank.challenge.domain.rules.scoring.ScoreBreakdown;
  * consulta y no se persiste, asi que no es un atributo de la pregunta.
  */
 public record ScoreResponse(
-        int total,
-        QuestionPriority priority,
-        BreakdownResponse breakdown) {
+    int total,
+    QuestionPriority priority,
+    BreakdownResponse breakdown) {
 
-    public record BreakdownResponse(
-            int waitingTimePoints,
-            int keywordPoints,
-            int orderAmountPoints,
-            int orderStatusPoints,
-            int questionStatusPoints) {
+  public record BreakdownResponse(
+      int waitingTimePoints,
+      int keywordPoints,
+      int orderAmountPoints,
+      int orderStatusPoints,
+      int questionStatusPoints) {
 
-        static BreakdownResponse from(ScoreBreakdown breakdown) {
-            return new BreakdownResponse(
-                    breakdown.waitingTimePoints(),
-                    breakdown.keywordPoints(),
-                    breakdown.orderAmountPoints(),
-                    breakdown.orderStatusPoints(),
-                    breakdown.questionStatusPoints());
-        }
+    static BreakdownResponse from(ScoreBreakdown breakdown) {
+      return new BreakdownResponse(
+          breakdown.waitingTimePoints(),
+          breakdown.keywordPoints(),
+          breakdown.orderAmountPoints(),
+          breakdown.orderStatusPoints(),
+          breakdown.questionStatusPoints());
     }
+  }
 
-    public static ScoreResponse from(QuestionScore score) {
-        return new ScoreResponse(
-                score.total(),
-                score.priority(),
-                BreakdownResponse.from(score.breakdown()));
-    }
+  public static ScoreResponse from(QuestionScore score) {
+    return new ScoreResponse(
+        score.total(),
+        score.priority(),
+        BreakdownResponse.from(score.breakdown()));
+  }
 }

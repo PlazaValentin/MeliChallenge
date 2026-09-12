@@ -19,20 +19,20 @@ import java.util.UUID;
  * @param answerText nulo mientras la pregunta no haya sido respondida.
  */
 public record QuestionResponse(
-        UUID id,
-        UUID productId,
-        String questionText,
-        String answerText,
-        QuestionStatus status,
-        Instant createdAt) {
+    UUID id,
+    UUID productId,
+    String questionText,
+    String answerText,
+    QuestionStatus status,
+    Instant createdAt) {
 
-    public static QuestionResponse from(Question question) {
-        return new QuestionResponse(
-                question.getId(),
-                question.getProductId().orElse(null),
-                question.getQuestionText(),
-                question.getAnswerText().orElse(null),
-                question.getStatus(),
-                question.getCreatedAt());
-    }
+  public static QuestionResponse from(Question question) {
+    return new QuestionResponse(
+        question.getId(),
+        question.getProductId().orElse(null),
+        question.getQuestionText(),
+        question.getAnswerText().orElse(null),
+        question.getStatus(),
+        question.getCreatedAt());
+  }
 }
