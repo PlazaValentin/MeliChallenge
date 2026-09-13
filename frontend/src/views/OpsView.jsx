@@ -6,7 +6,6 @@ import {
   orderStatusLabel,
   questionStatusLabel,
   SCORE_FACTOR_LABELS,
-  shortId,
 } from '../api/labels'
 import { SELLERS, sellerName } from '../api/sellers'
 import OrderDetail from '../components/OrderDetail'
@@ -146,13 +145,13 @@ function QuestionRow({ question, onOpenOrder }) {
           </div>
         </td>
         <td>
-          {/* El estado y el monto del pedido son dos de los factores del score:
-              tenerlos en la fila evita abrir el detalle solo para entender el
+          {/* Sin el id del pedido: con el prefijo comun del seed todas las filas
+              se verian iguales. El estado y el monto son dos de los factores del
+              score, y tenerlos aca evita abrir el detalle solo para entender el
               puntaje. */}
-          <div>{shortId(question.orderId)}</div>
+          <div>{sellerName(question.sellerId)}</div>
           <div className="chat-meta">
-            {sellerName(question.sellerId)} · {orderStatusLabel(question.orderStatus)} ·{' '}
-            {formatMoney(question.orderTotalAmount)}
+            {orderStatusLabel(question.orderStatus)} · {formatMoney(question.orderTotalAmount)}
           </div>
         </td>
         <td className="numeric">{question.score.total}</td>

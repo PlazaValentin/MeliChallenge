@@ -83,12 +83,3 @@ export function formatDateTime(isoInstant) {
 export function formatDate(isoInstant) {
   return dateFormat.format(new Date(isoInstant))
 }
-
-/**
- * Los ids son UUID y se truncan para mostrarlos: en pantalla alcanza con
- * poder distinguir e identificar una fila, y el UUID completo desalinea
- * cualquier tabla (ver DECISIONS.md, "Ids: UUID").
- */
-export function shortId(uuid) {
-  return uuid.slice(0, 8)
-}

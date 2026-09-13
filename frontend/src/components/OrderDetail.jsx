@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { answerQuestion, getOrderDetail, resolveQuestion } from '../api/client'
-import { formatDate, formatMoney, orderStatusLabel, shortId } from '../api/labels'
+import {
+  answerQuestion,
+  createQuestion,
+  getOrderDetail,
+  resolveQuestion,
+} from '../api/client'
+import { formatDate, formatMoney, orderStatusLabel } from '../api/labels'
+import NewQuestionForm from './NewQuestionForm'
 import QuestionChat from './QuestionChat'
 import { ErrorBanner, Loading, PriorityBadge } from './ui'
 
@@ -70,6 +76,14 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
     [runAction],
   )
 
+  // Crear tambien recarga: la pregunta nueva cambia la prioridad del pedido y
+  // el flag de pendientes, y la respuesta trae solo el id.
+  const handleCreate = useCallback(
+    (questionText, productId) =>
+      runAction(() => createQuestion(orderId, questionText, productId)),
+    [runAction, orderId],
+  )
+
   return (
     <section className="panel">
       <button type="button" onClick={onBack}>
@@ -81,7 +95,10 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
 
       {order && (
         <>
-          <h2>Pedido {shortId(order.id)}</h2>
+          {/* El UUID completo, no truncado: aca es donde sirve para copiarlo o
+              usarlo en un curl, y un prefijo comun lo haria inservible. */}
+          <h2>Pedido</h2>
+          <p className="order-id">{order.id}</p>
 
           <p className="chat-meta">
             {order.buyer.name} ({order.buyer.email}) · {formatDate(order.createdAt)} ·{' '}
@@ -130,6 +147,11 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
             onAnswer={handleAnswer}
             onResolve={handleResolve}
           />
+
+          {/* Operaciones no simula al comprador: el formulario existe para
+              demostrar el disparo de notificaciones desde la vista del
+              vendedor, y en modo lectura no se muestra nada que escriba. */}
+          {!readOnly && <NewQuestionForm lines={order.lines} onCreate={handleCreate} />}
         </>
       )}
     </section>

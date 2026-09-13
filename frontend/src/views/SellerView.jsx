@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listOrders } from '../api/client'
-import { formatDate, formatMoney, orderStatusLabel, shortId } from '../api/labels'
+import { formatDate, formatMoney, orderStatusLabel } from '../api/labels'
 import OrderDetail from '../components/OrderDetail'
 import OrderFilters from '../components/OrderFilters'
 import { EmptyState, ErrorBanner, Loading, PriorityBadge } from '../components/ui'
@@ -113,7 +113,8 @@ function SellerView({ sellerId, selectedOrderId, onSelectOrder }) {
         <table>
           <thead>
             <tr>
-              <th>Pedido</th>
+              {/* Sin columna de id: el pedido se identifica por comprador y
+                  fecha. El UUID vive en el detalle, donde sirve para copiarlo. */}
               <th>Fecha</th>
               <th>Comprador</th>
               <th>Estado</th>
@@ -126,7 +127,6 @@ function SellerView({ sellerId, selectedOrderId, onSelectOrder }) {
           <tbody>
             {orders.map((order) => (
               <tr key={order.id}>
-                <td>{shortId(order.id)}</td>
                 <td>{formatDate(order.createdAt)}</td>
                 <td>{order.buyer.name}</td>
                 <td>{orderStatusLabel(order.status)}</td>

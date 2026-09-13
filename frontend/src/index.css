@@ -271,6 +271,35 @@ th {
   gap: 8px;
 }
 
+/* UUID del pedido en el detalle. Monoespaciado y seleccionable, porque su uso
+   es copiarlo. */
+.order-id {
+  margin: 0 0 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+  user-select: all;
+}
+
+/* Alta de pregunta. Va visualmente separada del chat con un borde punteado: no
+   es parte de la conversacion sino una simulacion del comprador, y eso tiene
+   que verse sin leer el rotulo. */
+.new-question {
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 2px dashed var(--border);
+}
+
+.new-question h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.new-question select {
+  max-width: 320px;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;

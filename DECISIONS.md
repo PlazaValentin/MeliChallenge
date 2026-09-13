@@ -305,8 +305,8 @@ aceptado en cada una.
     - `GET   /api/ops/questions/unresolved`
 - **Idioma:** el código y los valores de enum viajan en inglés; el
   frontend mapea esos valores a etiquetas en español para el usuario.
-- **Ids: UUID**, por escalabilidad y por permitir truncarlos para
-  mostrarlos en demos/UI sin exponer un id secuencial.
+- **Ids: UUID**, por escalabilidad y por no exponer un id secuencial, que
+  filtra el volumen de pedidos del sistema.
 - **CORS** habilitado para el origen del frontend. Los orígenes viajan en
   configuración (`app.cors.allowed-origin-patterns`) y no como constante en el
   código, con el mismo criterio que el resto de `app.*`: el frontend puede
@@ -786,6 +786,24 @@ aceptado en cada una.
 - **Los filtros son un componente aparte de la tabla.** Uno toma la entrada del
   usuario y la otra muestra el resultado; juntos darían un archivo donde el markup
   del formulario tapa el del listado.
+- **El alta de pregunta se separa visualmente del chat con un borde.** No es un
+  turno más de la conversación sino una simulación del comprador, y eso tiene que
+  verse sin leer el rótulo: si se leyera como parte del hilo, parecería que el
+  vendedor puede escribir en nombre del comprador.
+- **El selector de producto solo ofrece las líneas del pedido.** Preguntar por un
+  producto que no pertenece al pedido es un `400` del backend, así que no se
+  ofrece: la UI no propone opciones que el sistema va a rechazar. La opción por
+  defecto es "sobre el pedido en general", que es el caso en que no viaja
+  `productId`.
+- **El formulario se limpia aunque la creación falle.** El error queda en el
+  banner; conservar el texto de un intento fallido invita a reenviar exactamente
+  lo mismo, que va a fallar igual.
+- **Los listados no muestran el id del pedido, y el detalle lo muestra completo.**
+  Se probó truncar el UUID a ocho caracteres, y con el prefijo común del seed
+  todas las filas se veían idénticas: una columna que no identifica nada ocupa
+  lugar y ensucia la lectura. En el listado el pedido se reconoce por comprador y
+  fecha, y en la cola de Operaciones por vendedor, estado y monto. El UUID vive en
+  el detalle, sin truncar, que es donde sirve para copiarlo o usarlo en un `curl`.
 
 ## Testing
 
