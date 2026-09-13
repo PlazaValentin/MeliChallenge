@@ -307,7 +307,15 @@ aceptado en cada una.
   frontend mapea esos valores a etiquetas en español para el usuario.
 - **Ids: UUID**, por escalabilidad y por permitir truncarlos para
   mostrarlos en demos/UI sin exponer un id secuencial.
-- **CORS** habilitado para el origen del frontend.
+- **CORS** habilitado para el origen del frontend. El origen viaja en
+  configuración (`app.cors.allowed-origin`) y no como constante en el código,
+  con el mismo criterio que el resto de `app.*`: el frontend puede servirse
+  desde otro puerto o máquina sin recompilar el backend. Se habilitan solo los
+  métodos del contrato (`GET`, `POST`, `PATCH`); `OPTIONS` no se declara porque
+  el preflight lo responde el propio soporte de CORS antes de llegar a un
+  controller, y listarlo sugeriría que hay un endpoint que lo atiende. Tampoco
+  se habilitan credenciales: no hay login ni cookies de sesión, y permitirlas
+  sería abrir algo que la aplicación no usa.
 - **Las preguntas tienen su propio controller**, por segmentación de
   responsabilidades. No quedan anidadas bajo el vendedor: el listado de
   preguntas ya trae los datos del vendedor y el id del pedido por si se
@@ -333,7 +341,7 @@ aceptado en cada una.
   las excepciones lanzadas por la aplicación y las mapea a su respuesta
   HTTP: validación de entrada → `400`, no encontrado → `404`, excepciones
   de negocio → `409`, no contempladas → `500`. Al cliente se le da el
-  detalle mínimo necesario para que el frontend lo muestre en un pop-up,
+  detalle mínimo necesario para que el frontend lo muestre en un banner,
   sin exponer stack trace. Los logs tampoco registran información PII; el
   detalle técnico queda únicamente en el log.
 - **UUID mal formado → `400`; UUID bien formado pero inexistente →
@@ -343,7 +351,7 @@ aceptado en cada una.
   el catálogo del vendedor, información que aunque pueda ser pública no
   corresponde revelar en un contexto que no la pide.
 - **Cuerpo único de error**, devuelto por el handler centralizado: código
-  de estado HTTP, descripción breve apta para mostrar en un pop-up, y un
+  de estado HTTP, descripción breve apta para mostrar en un banner, y un
   array de errores que permite listar múltiples fallos de validación de
   entrada en una sola respuesta. **El array existe siempre**, aunque venga
   vacío, para que el frontend no tenga que contemplar dos formas distintas
@@ -591,7 +599,64 @@ aceptado en cada una.
   rol. Queda declarado que simula los roles sin implementar autenticación
   ni control de acceso real.
 - **Mapeo de labels en el frontend:** los valores de enum llegan en inglés
-  desde la API y el frontend los traduce a etiquetas en español.
+  desde la API y el frontend los traduce a etiquetas en español. Si llega un
+  valor que el frontend no conoce, se muestra crudo en lugar de vacío: un enum
+  nuevo en el backend tiene que notarse en pantalla, no desaparecer.
+- **Sin router.** Son dos vistas con navegación lineal y el estado compartido
+  son tres valores (vista actual, vendedor y pedido seleccionado), que viven en
+  el componente raíz. Agregar `react-router` daría URLs compartibles y botón de
+  atrás, que esta demo no necesita, a cambio de una dependencia y su API. Se
+  asume el costo: no se puede compartir el link de un pedido.
+- **Ninguna dependencia agregada al scaffold del frontend.** `fetch`, `useState`
+  y `useEffect` cubren todo el alcance. Descartadas y por qué: `axios` (`fetch`
+  alcanza y el manejo de errores se centraliza igual en un solo módulo), React
+  Query o SWR (un polling con `setInterval` no justifica una capa de caché),
+  Redux o Zustand (el estado compartido son tres valores), MUI, Bootstrap o
+  Tailwind (CSS plano alcanza para tablas, chat y badges), y una librería de
+  toasts (el banner de error es un `div` condicional).
+- **El `sellerId` sale de una constante del frontend**, con los dos vendedores
+  del seed. Es consecuencia directa de no tener autenticación: en un sistema
+  real saldría del token de sesión. Por eso no se agregó un endpoint de
+  vendedores, que sería resolver por otra vía algo que en realidad resuelve el
+  login.
+- **Cambiar de vista o de vendedor cierra el pedido abierto.** El detalle se
+  resuelve dentro del vendedor de la ruta, así que un pedido de otro vendedor
+  respondería `404`; conservarlo dejaría la pantalla apuntando a algo que no
+  puede existir.
+- **La URL del backend viaja en una variable de entorno**
+  (`VITE_API_BASE_URL`, en `frontend/.env`), no como constante en el código. Es
+  la otra mitad del mismo acuerdo que `app.cors.allowed-origin`: si un extremo
+  se puede mover sin recompilar, el otro también. No tiene valor por defecto, con
+  el mismo criterio que el resto de la configuración, y la ausencia se verifica
+  al cargar el módulo y no en la primera llamada, para que una configuración
+  incompleta rompa al arrancar y no cuando alguien aprieta un botón. El archivo
+  se versiona: no guarda secretos, y sin él la aplicación no levanta.
+- **Toda respuesta se parsea de forma tolerante.** El cuerpo se lee como texto y
+  se intenta parsear aparte, porque `response.json()` no distingue "no hay
+  cuerpo" de "el cuerpo no es JSON" y ambos casos terminan en la misma excepción
+  de sintaxis. No todo lo que responde en esa URL es la aplicación: una página
+  de error del contenedor o un proxy en el medio devuelven HTML. Cuando el
+  cuerpo no es el de la API, el error igual se construye con el código de
+  estado, que es el único dato confiable que queda.
+- **Un fallo de red no es un error de la API.** Si la request no llega a destino
+  (backend caído, red, o el navegador bloqueando por CORS), no hay cuerpo que
+  leer: se construye un error con el mismo formato que el resto, para que la
+  capa que lo muestra no tenga que distinguir de dónde vino.
+- **Las fechas se formatean en la zona horaria del negocio**
+  (`America/Argentina/Buenos_Aires`), la misma en la que el backend corta los
+  días. Con la zona del navegador, un pedido podría mostrarse en un día distinto
+  del que el filtro de fechas considera.
+- **El error de la API se muestra en un banner dentro de la vista**, no en un
+  pop-up modal. Un modal bloqueante obliga a cerrarlo antes de poder corregir el
+  campo, mientras que el banner deja ver el error y el formulario al mismo
+  tiempo. El banner se limpia al disparar el reintento: si no, el error viejo
+  queda en pantalla mientras la nueva request está en vuelo.
+- **Los tres estados vacíos son distintos y se declaran por separado:** un
+  listado de pedidos sin resultados (los filtros no matchean), una cola de
+  Operaciones sin filas (no hay preguntas sin resolver, que es una buena
+  noticia) y un pedido sin preguntas. Este último es lo normal y no una
+  anomalía: la sección del chat no se oculta, porque un bloque ausente no se
+  distingue de uno que todavía carga o que falló.
 
 ## Testing
 
@@ -723,10 +788,13 @@ para no fijarlos por cuenta propia:
 - **Valores numéricos concretos de las brechas de tiempo, monto y estado**
   usados en el scoring (los ejemplos dados —10/20/30/50, o 5/30 para
   estados— son ilustrativos de la idea, no la configuración final).
-- **Exposición del endpoint de creación de preguntas en el frontend**: se
-  definió que el endpoint existe en el backend para demostrar
-  notificaciones, pero no si tendrá una pantalla/formulario en el
-  frontend o quedará solo para pruebas directas contra la API.
+- ~~**Exposición del endpoint de creación de preguntas en el frontend**~~:
+  **resuelto**. Se expone como un formulario al pie del chat, en el detalle del
+  pedido, rotulado explícitamente como simulación del comprador. Es lo único
+  que permite demostrar el disparo de notificaciones desde la interfaz; sin eso
+  el objetivo solo se puede mostrar con `curl`. Queda en la vista del vendedor
+  y no como un tercer rol en el selector, porque el comprador no es una entidad
+  del modelo y darle una vista propia sugeriría lo contrario.
 - **Reglas concretas de validación de entrada** (longitudes mínimas y
   máximas de textos, campos obligatorios): se definen al implementar cada
   flujo, no por anticipado.

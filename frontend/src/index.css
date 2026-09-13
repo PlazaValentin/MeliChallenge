@@ -1,0 +1,270 @@
+/*
+ * Hoja de estilos unica de la aplicacion.
+ *
+ * CSS plano y un solo archivo: el alcance son dos vistas con tablas, un chat y
+ * unos badges, y no justifica sumar una libreria de UI ni CSS modules. El
+ * esfuerzo de este challenge esta asignado al backend y esto es deliberado.
+ */
+
+:root {
+  --text: #1f2933;
+  --text-muted: #616e7c;
+  --border: #d9e2ec;
+  --surface: #ffffff;
+  --background: #f5f7fa;
+  --accent: #2b6cb0;
+  --danger: #c53030;
+  --danger-bg: #fff5f5;
+
+  /* Un color por categoria de prioridad, en escala ascendente de gravedad:
+     el orden de las categorias es significativo y el color lo acompana. */
+  --priority-low: #4c9a2a;
+  --priority-medium: #b7791f;
+  --priority-high: #dd6b20;
+  --priority-critical: #c53030;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--background);
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+h3 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+button {
+  font: inherit;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+textarea {
+  resize: vertical;
+}
+
+label {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Layout general */
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.panel {
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* Estados transversales: carga, error y vacio */
+
+.loading,
+.empty {
+  padding: 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.error-banner {
+  padding: 12px;
+  margin-bottom: 16px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger);
+  border-radius: 4px;
+}
+
+.error-banner ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+/* Tablas de pedidos y de la cola de Operaciones */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.numeric {
+  text-align: right;
+}
+
+/* Badges */
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: #ffffff;
+  border-radius: 10px;
+}
+
+.badge-low {
+  background: var(--priority-low);
+}
+
+.badge-medium {
+  background: var(--priority-medium);
+}
+
+.badge-high {
+  background: var(--priority-high);
+}
+
+.badge-critical {
+  background: var(--priority-critical);
+}
+
+/* Chat de preguntas: la pregunta del comprador a la izquierda, la respuesta
+   del vendedor a la derecha, para que el turno se lea sin leer el rotulo. */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-message {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.chat-question {
+  align-self: flex-start;
+  background: var(--background);
+}
+
+.chat-answer {
+  align-self: flex-end;
+  background: #e6f0fa;
+}
+
+.chat-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.chat-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* Formularios de respuesta y de alta de pregunta */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form textarea {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
