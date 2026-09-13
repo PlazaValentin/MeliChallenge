@@ -390,7 +390,8 @@ vendedores por métricas operacionales, eviction del store en memoria y
 resiliencia de notificaciones (reintentos, backpressure, DLQ).
 
 Los puntos detectados y no resueltos, con su propuesta a futuro, y las
-ambigüedades que quedaron abiertas están en [DECISIONS.md](DECISIONS.md).
+ambigüedades detectadas y cómo se resolvieron están en
+[DECISIONS.md](DECISIONS.md).
 
 ## Nota sobre los scripts de package.json
 

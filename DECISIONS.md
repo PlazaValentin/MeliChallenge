@@ -285,8 +285,9 @@ aceptado en cada una.
   esta entrega.
 - **Endpoint de creación de preguntas:** existe en el backend
   específicamente para poder demostrar el disparo de notificaciones de
-  punta a punta. Su exposición en el frontend queda abierta (ver
-  ambigüedades).
+  punta a punta. Se expone en el frontend como un formulario al pie del chat,
+  rotulado como simulación del comprador (ver "Ambigüedades detectadas y su
+  resolución").
 
 ## Contrato de la API
 
