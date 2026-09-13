@@ -15,9 +15,12 @@ import java.math.BigDecimal;
  * tenga
  * la escala correcta en lugar de corregirlo silenciosamente.
  */
-final class Money {
+public final class Money {
 
-    static final int SCALE = 2;
+    /**
+     * Escala unica del dinero: la valida el dominio y la respeta la serializacion.
+     */
+    public static final int SCALE = 2;
 
     private Money() {
     }

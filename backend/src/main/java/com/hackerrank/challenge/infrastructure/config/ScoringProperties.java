@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Lee {@code app.scoring.*} de {@code application.properties} y arma el

@@ -153,12 +153,13 @@ aceptado en cada una.
   vendedor (para que el vendedor no pueda alterar el score de su propia
   pregunta al responder). 10 puntos por cada palabra **distinta**
   encontrada; una palabra repetida varias veces en el mismo texto no vuelve
-  a sumar. Diccionario de ejemplo (configurable, pensado para ilustrar la
-  idea, no exhaustivo): "urgente", "roto", "incompleto", "enojado",
-  "estafa", "defectuoso", "pesimo", "indignado", "reclamo", "devolucion".
-  Queda declarada como idea futura la posibilidad de agrupar palabras clave
-  por peso distinto (ej. "estafa" más grave que "incompleto"), sin
-  implementar ahora por no tener criterio de negocio validado.
+  a sumar. Diccionario definido e implementado en
+  `app.scoring.keyword-points` (configurable, no exhaustivo): "urgente",
+  "roto", "incompleto", "enojado", "estafa", "defectuoso", "pesimo",
+  "indignado", "reclamo", "devolucion", 10 puntos cada una. Como los puntos
+  se declaran por palabra y no como un valor único, asignarle más peso a una
+  palabra ya es posible sin tocar código: hoy todas valen igual porque no
+  hay criterio de negocio validado para diferenciarlas.
 - **Score máximo teórico: 195** (60+50+40+30+15). **Score máximo al crear
   la pregunta: 135** (sin el factor tiempo, que en ese momento aporta cero).
 - **Umbrales de clasificación**, sobre el score total: `LOW` si el score es
@@ -597,9 +598,6 @@ para no fijarlos por cuenta propia:
 - **Valores numéricos concretos de las brechas de tiempo, monto y estado**
   usados en el scoring (los ejemplos dados —10/20/30/50, o 5/30 para
   estados— son ilustrativos de la idea, no la configuración final).
-- **Diccionario final de palabras clave y si se agruparán por peso
-  distinto** (se mencionó la idea de grupos con más peso, ej. "ofendido"
-  vs. "falta", pero sin decisión tomada de implementarlo).
 - **Exposición del endpoint de creación de preguntas en el frontend**: se
   definió que el endpoint existe en el backend para demostrar
   notificaciones, pero no si tendrá una pantalla/formulario en el
