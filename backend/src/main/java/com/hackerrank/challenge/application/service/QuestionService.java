@@ -1,5 +1,6 @@
 package com.hackerrank.challenge.application.service;
 
+import com.hackerrank.challenge.application.event.QuestionCreatedEvent;
 import com.hackerrank.challenge.application.output.ScoredQuestion;
 import com.hackerrank.challenge.domain.entity.Order;
 import com.hackerrank.challenge.domain.entity.Question;
@@ -10,6 +11,7 @@ import com.hackerrank.challenge.domain.repository.QuestionRepository;
 import com.hackerrank.challenge.domain.repository.SellerRepository;
 import com.hackerrank.challenge.domain.rules.scoring.QuestionImportanceScorer;
 import com.hackerrank.challenge.domain.rules.scoring.QuestionScore;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
@@ -36,6 +38,7 @@ public class QuestionService {
     private final OrderRepository orderRepository;
     private final SellerRepository sellerRepository;
     private final QuestionImportanceScorer scorer;
+    private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
 
     public QuestionService(
@@ -43,11 +46,13 @@ public class QuestionService {
             OrderRepository orderRepository,
             SellerRepository sellerRepository,
             QuestionImportanceScorer scorer,
+            ApplicationEventPublisher eventPublisher,
             Clock clock) {
         this.questionRepository = questionRepository;
         this.orderRepository = orderRepository;
         this.sellerRepository = sellerRepository;
         this.scorer = scorer;
+        this.eventPublisher = eventPublisher;
         this.clock = clock;
     }
 
@@ -60,13 +65,34 @@ public class QuestionService {
      * solo el {@code orderId}.
      *
      * <p>
-     * No se calcula el score en este punto: el score al crear solo sirve para
-     * decidir si se notifica, y las notificaciones son una etapa aparte.
+     * El score se calcula solo para decidir si se notifica: no se persiste ni se
+     * devuelve. El evento se publica despues de guardar, para que ningun listener
+     * pueda observar una pregunta que todavia no existe en el repositorio.
      */
     public Question createQuestion(UUID orderId, UUID productId, String questionText) {
         Order order = requireOrder(orderId);
         Question question = Question.on(order, productId, questionText, clock.instant());
-        return questionRepository.save(question);
+        Question saved = questionRepository.save(question);
+
+        publishCreated(saved, order);
+        return saved;
+    }
+
+    /**
+     * Es el mismo calculo que hace Operaciones, con el mismo reloj: corriendo
+     * recien creada la pregunta, la espera es de microsegundos y cae en el primer
+     * tramo, asi que el factor tiempo aporta cero sin necesidad de un caso aparte.
+     */
+    private void publishCreated(Question question, Order order) {
+        QuestionScore score = scorer.score(question, order, clock);
+
+        eventPublisher.publishEvent(new QuestionCreatedEvent(
+                question.getId(),
+                order.getId(),
+                order.getSellerId(),
+                score.priority(),
+                score.total(),
+                question.getCreatedAt()));
     }
 
     public Question answerQuestion(UUID questionId, String answerText) {
