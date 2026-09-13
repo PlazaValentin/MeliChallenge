@@ -276,4 +276,36 @@ th {
   flex-wrap: wrap;
   gap: 12px;
   align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+/* Cola de Operaciones */
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Desglose del score, desplegado bajo su fila. Los factores se acomodan segun
+   el ancho disponible en vez de en columnas fijas de la tabla, que con cinco
+   valores mas la pregunta y el pedido la volverian ilegible. */
+.breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 8px 12px;
+  background: var(--background);
+  border-radius: 4px;
+}
+
+.breakdown dt {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.breakdown dd {
+  margin: 0;
+  font-weight: 600;
 }

@@ -722,6 +722,37 @@ aceptado en cada una.
   Sin eso, quedaría mostrando los pedidos del vendedor anterior mientras llegan
   los nuevos, que es peor que no mostrar nada: el usuario no tiene forma de
   saber que lo que está leyendo ya no corresponde a lo que seleccionó.
+- **La cola de Operaciones no ordena en el frontend.** El orden (score
+  descendente y, ante empate, la más antigua primero) es una regla de negocio y
+  se muestra tal como llega. Reordenarlo en el cliente duplicaría el criterio en
+  la punta que no calcula el score.
+- **El desglose del score es colapsable por fila y arranca cerrado.** La cola
+  existe para priorizar, así que lo que se lee de un vistazo es el score y la
+  prioridad; los cinco factores quedan a un click para cuando haga falta entender
+  por qué una pregunta quedó arriba de otra. Se despliega en una fila propia a lo
+  ancho y no como cinco columnas fijas, que junto con la pregunta y el pedido
+  volverían ilegible la tabla.
+- **El filtro por vendedor vive en la vista de Operaciones, no en el header.** El
+  selector del header elige el vendedor cuyo trabajo se está mirando; el de
+  Operaciones es un filtro de la cola, con la opción "Todos" que en la otra vista
+  no existe. Unificarlos obligaría al header a saber en qué vista está para
+  decidir qué opciones ofrecer, que es lógica de una vista viviendo afuera.
+- **La lista de vendedores vive en `api/sellers.js`, no en la raíz.** Es un dato,
+  del mismo tipo que las etiquetas, y las dos vistas lo necesitan: dejarlo en
+  `App` obligaría a las vistas a importar de su propio padre, invirtiendo la
+  dirección de la dependencia.
+- **El pedido que abre Operaciones vive en su vista y no en la raíz.** No es el
+  mismo dato que el del vendedor: allá el vendedor viene del header y solo se
+  elige el pedido, acá el par (vendedor, pedido) sale de la fila. Compartir el
+  estado haría que la raíz sostenga un valor con semántica distinta según la
+  vista, y el vendedor del header entraría en conflicto con el de la fila.
+- **Operaciones abre el detalle en modo lectura.** Es el mismo `OrderDetail` con
+  el mismo chat: la diferencia no está en el componente sino en el permiso, porque
+  solo el vendedor responde las dudas del comprador.
+- **Volver del detalle también recarga la cola de Operaciones.** Ahí no hay acción
+  posible que la invalide, pero la cola es global y puede haber otro operador —o
+  el propio vendedor— trabajando sobre las mismas preguntas mientras se mira el
+  detalle.
 
 ## Testing
 

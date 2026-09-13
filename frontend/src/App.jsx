@@ -1,31 +1,21 @@
 import { useState } from 'react'
+import { SELLERS } from './api/sellers'
+import OpsView from './views/OpsView'
 import SellerView from './views/SellerView'
-
-/**
- * Vendedores disponibles, con sus ids del seed.
- *
- * Estan en el cliente como consecuencia de no tener autenticacion: en un
- * sistema real el sellerId sale del token de sesion y no de una lista que el
- * frontend conoce. Por eso tampoco se agrego un endpoint de vendedores, que
- * seria resolver por otra via algo que en realidad resuelve el login (ver
- * DECISIONS.md, "Sin login" y "Sin restriccion de acceso entre vendedores").
- */
-const SELLERS = [
-  { id: '10000000-0000-0000-0000-000000000001', name: 'TecnoHogar' },
-  { id: '10000000-0000-0000-0000-000000000002', name: 'Deportes Andes' },
-]
 
 /**
  * Raiz de la aplicacion.
  *
- * Concentra el unico estado compartido: que vista se esta mirando, con que
- * vendedor y sobre que pedido. No hay router: son dos vistas con navegacion
- * lineal, y agregar la dependencia solo daria URLs compartibles y boton de
- * atras, que esta demo no necesita.
+ * Concentra el estado compartido: que vista se esta mirando, con que vendedor y
+ * sobre que pedido. No hay router: son dos vistas con navegacion lineal, y
+ * agregar la dependencia solo daria URLs compartibles y boton de atras, que
+ * esta demo no necesita.
  *
- * El pedido seleccionado vive aca y no dentro de cada vista porque ambas
- * pueden abrir el detalle, y asi el componente de detalle se reutiliza sin que
- * una vista tenga que conocer el estado de la otra.
+ * El pedido abierto por Operaciones no vive aca sino en su vista: no es el
+ * mismo dato. En la vista del vendedor el vendedor viene del header y solo se
+ * elige el pedido; en Operaciones el par (vendedor, pedido) sale de la fila, y
+ * compartir el estado haria que el vendedor del header entre en conflicto con
+ * el de la fila.
  */
 function App() {
   const [view, setView] = useState('seller')
@@ -87,8 +77,7 @@ function App() {
             onSelectOrder={setSelectedOrderId}
           />
         ) : (
-          // La vista de Operaciones se implementa en el bloque 4.
-          <p className="empty">Vista de Operaciones pendiente.</p>
+          <OpsView />
         )}
       </main>
     </div>
