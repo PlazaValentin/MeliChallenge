@@ -160,6 +160,18 @@ aceptado en cada una.
   se declaran por palabra y no como un valor único, asignarle más peso a una
   palabra ya es posible sin tocar código: hoy todas valen igual porque no
   hay criterio de negocio validado para diferenciarlas.
+- **El techo del factor es explícito, no emergente del diccionario**
+  (`app.scoring.keyword-max-points`, hoy 50): por más palabras distintas que
+  traiga el texto, el factor no supera ese valor. Sin tope, las diez palabras
+  por defecto sumarían 100 y las keywords pasarían a pesar más que el tiempo
+  de espera (60), contradiciendo el orden de peso declarado más arriba. Se
+  prefirió una propiedad a derivar el techo de la cantidad de palabras, para
+  que ampliar el diccionario no corra el techo en silencio, y a una constante
+  en el código, para no dejar el único techo del scoring fuera de
+  configuración. La configuración se rechaza al arrancar si el techo no es
+  positivo o si queda por debajo del puntaje de alguna palabra, caso en que el
+  diccionario diría una cosa y el factor puntuaría otra ya con una sola
+  coincidencia.
 - **Score máximo teórico: 195** (60+50+40+30+15). **Score máximo al crear
   la pregunta: 135** (sin el factor tiempo, que en ese momento aporta cero).
 - **Umbrales de clasificación**, sobre el score total: `LOW` si el score es

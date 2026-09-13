@@ -43,6 +43,7 @@ public final class ScoringConfigs {
             "indignado", 10,
             "reclamo", 10,
             "devolucion", 10),
+        50,
         List.of(
             Tier.upTo(new BigDecimal("49999.99"), 0),
             Tier.upTo(new BigDecimal("149999.99"), 15),
@@ -68,9 +69,12 @@ public final class ScoringConfigs {
    * cinco) no serian alcanzables.
    */
   public static ScoringConfig onlyKeyword(int keywordPoints) {
+    // El techo debe ser positivo, asi que para el caso de cero puntos se usa 1:
+    // igual acota a lo que suma la unica palabra del diccionario.
     return new ScoringConfig(
         List.of(Tier.unbounded(0)),
         Map.of(SINGLE_KEYWORD, keywordPoints),
+        Math.max(keywordPoints, 1),
         List.of(Tier.unbounded(0)),
         zeroFor(OrderStatus.values()),
         zeroFor(QuestionStatus.values()),

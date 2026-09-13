@@ -104,6 +104,24 @@ class QuestionImportanceScorerTest {
     }
 
     /**
+     * Sin tope, diez palabras de diez puntos darian 100 y las keywords pasarian
+     * a pesar mas que el tiempo de espera (60), contra el orden de peso
+     * declarado en DECISIONS.md.
+     */
+    @Test
+    @DisplayName("seis o mas palabras clave distintas no superan el techo del factor")
+    void seisOMasPalabrasClaveDistintasNoSuperanElTechoDelFactor() {
+      assertThat(keywordPointsOf(
+          "Es urgente: llego roto e incompleto, estoy enojado, esto es una estafa y el producto es defectuoso."))
+          .isEqualTo(50);
+
+      assertThat(keywordPointsOf(
+          "Urgente: producto roto, incompleto, defectuoso. Estoy enojado e indignado,"
+              + " es una estafa, pesimo. Hago un reclamo y pido la devolucion."))
+          .isEqualTo(50);
+    }
+
+    /**
      * Solo se mira el texto de la pregunta: si la respuesta contara, el vendedor
      * podria alterar el score de la pregunta que le toca atender.
      */

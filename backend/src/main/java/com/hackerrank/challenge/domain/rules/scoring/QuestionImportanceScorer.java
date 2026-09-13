@@ -98,14 +98,17 @@ public final class QuestionImportanceScorer {
   }
 
   /**
-   * Suma 1 punto por palabra distinta encontrada; repeticiones no vuelven a
-   * sumar.
+   * Suma los puntos de cada palabra distinta encontrada (las repeticiones no
+   * vuelven a sumar) y acota el resultado al techo del factor, para que las
+   * palabras clave no puedan superar el peso declarado frente al resto.
    */
   private int pointsForKeywords(String questionText) {
-    return keywordPatterns.entrySet().stream()
+    int points = keywordPatterns.entrySet().stream()
         .filter(entry -> entry.getKey().matcher(questionText).find())
         .mapToInt(Map.Entry::getValue)
         .sum();
+
+    return Math.min(points, config.keywordMaxPoints());
   }
 
   private static Pattern compileKeywordPattern(String keyword) {

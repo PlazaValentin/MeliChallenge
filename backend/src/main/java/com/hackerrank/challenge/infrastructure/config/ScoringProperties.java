@@ -29,6 +29,7 @@ public class ScoringProperties {
 
   private List<TierProperties<Long>> waitingTimeHoursTiers;
   private Map<String, Integer> keywordPoints;
+  private int keywordMaxPoints;
   private List<TierProperties<BigDecimal>> orderAmountTiers;
   private Map<OrderStatus, Integer> orderStatusPoints;
   private Map<QuestionStatus, Integer> questionStatusPoints;
@@ -48,6 +49,14 @@ public class ScoringProperties {
 
   public void setKeywordPoints(Map<String, Integer> keywordPoints) {
     this.keywordPoints = keywordPoints;
+  }
+
+  public int getKeywordMaxPoints() {
+    return keywordMaxPoints;
+  }
+
+  public void setKeywordMaxPoints(int keywordMaxPoints) {
+    this.keywordMaxPoints = keywordMaxPoints;
   }
 
   public List<TierProperties<BigDecimal>> getOrderAmountTiers() {
@@ -86,6 +95,7 @@ public class ScoringProperties {
     return new ScoringConfig(
         toDurationTiers(waitingTimeHoursTiers),
         keywordPoints,
+        keywordMaxPoints,
         toTiers(orderAmountTiers),
         orderStatusPoints,
         questionStatusPoints,

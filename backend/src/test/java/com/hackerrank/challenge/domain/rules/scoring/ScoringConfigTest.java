@@ -59,6 +59,29 @@ class ScoringConfigTest {
   }
 
   @Test
+  @DisplayName("el techo de palabras clave debe ser mayor a cero")
+  void elTechoDePalabrasClaveDebeSerMayorACero() {
+    assertThatThrownBy(() -> configWithKeywordMax(0))
+        .isInstanceOf(DomainValidationException.class);
+
+    assertThatThrownBy(() -> configWithKeywordMax(-10))
+        .isInstanceOf(DomainValidationException.class);
+  }
+
+  /**
+   * Con un techo por debajo del puntaje de una palabra, el diccionario diria una
+   * cosa y el factor puntuaria otra ya con una sola coincidencia.
+   */
+  @Test
+  @DisplayName("el techo de palabras clave no puede ser menor al puntaje de una palabra")
+  void elTechoDePalabrasClaveNoPuedeSerMenorAlPuntajeDeUnaPalabra() {
+    assertThatThrownBy(() -> configWithKeywordMax(9))
+        .isInstanceOf(DomainValidationException.class);
+
+    assertThat(configWithKeywordMax(10).keywordMaxPoints()).isEqualTo(10);
+  }
+
+  @Test
   @DisplayName("el ultimo tramo sin tope aplica a cualquier valor")
   void elUltimoTramoSinTopeAplicaACualquierValor() {
     Tier<Duration> unbounded = Tier.unbounded(60);
@@ -83,9 +106,21 @@ class ScoringConfigTest {
     return new ScoringConfig(
         List.of(Tier.unbounded(0)),
         Map.of("urgente", 10),
+        50,
         List.of(Tier.<BigDecimal>unbounded(0)),
         orderStatusPoints,
         questionStatusPoints,
+        new ClassificationThresholds(50, 90, 130));
+  }
+
+  private static ScoringConfig configWithKeywordMax(int keywordMaxPoints) {
+    return new ScoringConfig(
+        List.of(Tier.unbounded(0)),
+        Map.of("urgente", 10),
+        keywordMaxPoints,
+        List.of(Tier.<BigDecimal>unbounded(0)),
+        completeOrderStatusPoints(),
+        completeQuestionStatusPoints(),
         new ClassificationThresholds(50, 90, 130));
   }
 

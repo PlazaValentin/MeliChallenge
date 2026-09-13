@@ -27,6 +27,7 @@ import java.util.Optional;
 public record ScoringConfig(
     List<Tier<Duration>> waitingTimeTiers,
     Map<String, Integer> keywordPoints,
+    int keywordMaxPoints,
     List<Tier<BigDecimal>> orderAmountTiers,
     Map<OrderStatus, Integer> orderStatusPoints,
     Map<QuestionStatus, Integer> questionStatusPoints,
@@ -35,6 +36,7 @@ public record ScoringConfig(
   public ScoringConfig {
     requireNonEmpty(waitingTimeTiers, "Los tramos de tiempo de espera");
     requireNonEmpty(keywordPoints, "El diccionario de palabras clave");
+    requireValidKeywordMax(keywordPoints, keywordMaxPoints);
     requireNonEmpty(orderAmountTiers, "Los tramos de monto del pedido");
     requireComplete(orderStatusPoints, OrderStatus.values(), "el estado del pedido");
     requireComplete(questionStatusPoints, QuestionStatus.values(), "el estado de la pregunta");
@@ -53,6 +55,24 @@ public record ScoringConfig(
     if (map == null || map.isEmpty()) {
       throw new DomainValidationException(fieldDescription + " no puede estar vacío.");
     }
+  }
+
+  /**
+   * Un tope que no alcanza para una sola palabra dejaría al diccionario
+   * puntuando algo distinto de lo declarado en cada una de sus entradas.
+   */
+  private static void requireValidKeywordMax(Map<String, Integer> keywordPoints, int keywordMaxPoints) {
+    if (keywordMaxPoints <= 0) {
+      throw new DomainValidationException(
+          "El techo de puntos por palabras clave debe ser mayor a cero.");
+    }
+    keywordPoints.values().stream()
+        .filter(points -> points > keywordMaxPoints)
+        .findAny()
+        .ifPresent(points -> {
+          throw new DomainValidationException(
+              "El techo de puntos por palabras clave no puede ser menor al puntaje de una palabra.");
+        });
   }
 
   private static <E extends Enum<E>> void requireComplete(

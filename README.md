@@ -25,7 +25,7 @@ controla con `app.seed.enabled` en `application.properties`.
 
 ### Tests
 
-180 tests, sin dependencia del contexto de Spring salvo el `contextLoads` del
+183 tests, sin dependencia del contexto de Spring salvo el `contextLoads` del
 scaffold. Cubren el scoring factor por factor y en los bordes de cada brecha,
 las transiciones de estado (con foco en las prohibidas), las invariantes del
 dominio, la derivación de la prioridad del pedido y el despacho de
@@ -88,20 +88,11 @@ if (lines.stream().anyMatch(Objects::isNull)) {
 Quedó cubierto por dos tests: uno que verifica que una línea nula se rechaza
 como dato inválido, y otro que construye un pedido con una lista inmutable, que
 es el caso que fallaba.
-
 Vale como observación sobre el valor de los tests: el caso no se encontró
 revisando el código ni ejercitando la API, sino al construir las entidades
 desde afuera con datos propios.
 
 ## Detectado y no resuelto
 
-- **El techo declarado de las palabras clave no coincide con el configurado.**
-  DECISIONS.md fija un techo de 50 puntos para el factor de keywords, pero el
-  diccionario por defecto tiene diez palabras de 10 puntos cada una y el scorer
-  no aplica tope, así que el máximo real es 100. En la práctica no se alcanza
-  (requeriría una pregunta con las diez palabras), pero el techo declarado y el
-  efectivo difieren. Queda pendiente definir si corresponde acotar el factor o
-  ajustar lo declarado.
-
-El resto de los puntos detectados y no resueltos, junto con las ambigüedades
-abiertas, está en [DECISIONS.md](DECISIONS.md).
+Los puntos detectados y no resueltos, junto con las ambigüedades abiertas,
+están en [DECISIONS.md](DECISIONS.md).
