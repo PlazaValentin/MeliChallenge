@@ -179,6 +179,14 @@ aceptado en cada una.
     pesan keyword, monto y estado del pedido (y estado de la pregunta).
   - Al consultar Operaciones: se recalcula al vuelo para ordenar, ahí sí
     con el factor tiempo activo.
+- **Los dos momentos usan el mismo reloj real.** El cero del factor tiempo al
+  crear no se fuerza: sale de que la diferencia entre crear y puntuar es de
+  microsegundos y cae en el primer tramo. Se evaluó fijar el reloj en el
+  `createdAt` de la pregunta para que el cero fuera una identidad, y se
+  descartó: convertiría el momento de creación en un caso especial del
+  scoring, dejaría de reflejar un cambio de configuración en el primer tramo,
+  y obligaría a explicar por qué ahí se usa un reloj distinto. El caso
+  teórico de una espera negativa ya está contemplado en el propio cálculo.
 - **Lo que se persiste es la pregunta con sus atributos, no el score ni
   la clasificación.** El score y la clasificación siempre se derivan al
   consultar. Esto es consciente: si el estado de la pregunta cambia
@@ -219,6 +227,41 @@ aceptado en cada una.
   Agregar un canal nuevo no debe requerir modificar los canales
   existentes.
 - El fallo de un canal no afecta a los demás; se registra en log.
+- **Se notifica desde `HIGH` hacia arriba.** El umbral no es una decisión
+  propia: el enunciado pide notificar cuando la pregunta se clasifica como
+  "High Priority" o "Critical". Vive en configuración
+  (`app.notifications.minimum-priority`) y no como constante, y la
+  comparación se apoya en el orden natural de la clasificación, que ya está
+  declarado como significativo.
+- **Consecuencia de que el umbral sea `HIGH` y no `CRITICAL`:** al crear, el
+  factor tiempo aporta cero, así que el techo real depende del estado del
+  pedido. Con monto máximo y cinco palabras clave se llega a 115 sobre un
+  pedido en curso y a 135 sobre uno `CANCELLED`: `CRITICAL` (130) solo es
+  alcanzable al crear si el pedido está cancelado. Un umbral en `CRITICAL`
+  habría dejado sin notificar toda pregunta grave sobre un pedido vigente,
+  que es el caso más común.
+- **El evento lleva la clasificación ya calculada, no el id solo.** El score
+  no se persiste: si el listener lo recalculara obtendría otro valor, porque
+  entre publicar y consumir pasó tiempo y el factor tiempo es sensible a eso.
+  Se transporta la decisión tomada en el instante de creación, que es la que
+  corresponde a ese momento.
+- **Un flag por canal, y el canal existe solo si está encendido.** Cada canal
+  declara su propia condición sobre `app.notifications.channels.<canal>.enabled`
+  y se registra como bean únicamente si está activo; quien despacha recibe la
+  lista de canales ya filtrada y la recorre sin preguntar por ninguno en
+  particular. Así sumar Slack o SMS es publicar una clase nueva y una línea de
+  configuración, sin tocar los canales existentes ni el código que los invoca.
+  Se preferió esto a una lista única de canales activos (`active-channels=email`)
+  porque esa alternativa obliga a quien despacha a filtrar por nombre, es decir
+  a conocer la identidad de los canales.
+- **La decisión de notificar y el despacho viven separados del listener.** El
+  listener solo recibe el evento y delega; decidir y despachar es una pieza
+  aparte, sin anotaciones de asincronía, que puede ejercitarse de forma
+  directa. Es lo que hace testeable el punto siguiente.
+- **Los avisos no llevan el texto de la pregunta ni datos del comprador.** Los
+  canales loguean lo que envían, y los logs no registran información PII
+  (coherente con lo definido para el manejo de errores). Viajan los ids, la
+  clasificación y el score, que alcanzan para actuar.
 - **Testing:** la lógica del listener (decide-si-notifica-y-por-qué-canal)
   y la publicación del evento se testean por separado, sin depender de la
   asincronía real, para evitar tests flaky.
