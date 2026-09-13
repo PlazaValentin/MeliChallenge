@@ -79,22 +79,21 @@ public class OrderController {
   }
 
   /**
-     * Detalle del pedido con sus lineas y preguntas. El pedido se busca dentro del
-     * vendedor de la ruta: uno que pertenezca a otro vendedor responde 404.
-     */
-    @GetMapping("/{orderId}")
-    public OrderDetailResponse getOrder(
-            @PathVariable @NotNull UUID sellerId,
-            @PathVariable @NotNull UUID orderId) {
+   * Detalle del pedido con sus lineas y preguntas. El pedido se busca dentro del
+   * vendedor de la ruta: uno que pertenezca a otro vendedor responde 404.
+   */
+  @GetMapping("/{orderId}")
+  public OrderDetailResponse getOrder(
+      @PathVariable @NotNull UUID sellerId,
+      @PathVariable @NotNull UUID orderId) {
 
-        return OrderDetailResponse.from(orderService.findOrderDetail(sellerId, orderId));
-    }
+    return OrderDetailResponse.from(orderService.findOrderDetail(sellerId, orderId));
+  }
 
   /**
    * Se valida a mano porque involucra dos campos: ninguna anotacion de campo
-   * puede
-   * expresar que un valor sea coherente con otro. Un rango al reves no es una
-   * busqueda sin resultados, es una consulta mal armada.
+   * puede expresar que un valor sea coherente con otro. Un rango al reves no es
+   * una busqueda sin resultados, es una consulta mal armada.
    */
   private void requireValidRange(LocalDate from, LocalDate to) {
     if (from != null && to != null && from.isAfter(to)) {
@@ -103,10 +102,8 @@ public class OrderController {
     }
   }
 
-    /** Preserva el orden de llegada para que el filtro sea estable al depurar. */
-    private Set<OrderStatus> normalize(Set<OrderStatus> statuses) {
-        return statuses == null || statuses.isEmpty() ? null : new LinkedHashSet<>(statuses);
-    }
+  /** Preserva el orden de llegada para que el filtro sea estable al depurar. */
+  private Set<OrderStatus> normalize(Set<OrderStatus> statuses) {
+    return statuses == null || statuses.isEmpty() ? null : new LinkedHashSet<>(statuses);
+  }
 }
-
-  
