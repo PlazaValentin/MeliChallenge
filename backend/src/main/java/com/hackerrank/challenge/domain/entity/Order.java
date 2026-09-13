@@ -55,7 +55,7 @@ public final class Order {
         if (lines == null || lines.isEmpty()) {
             throw new DomainValidationException("El pedido debe tener al menos una linea.");
         }
-        if (lines.contains(null)) {
+        if (lines.stream().anyMatch(Objects::isNull)) {
             throw new DomainValidationException("El pedido no puede tener lineas vacias.");
         }
         if (createdAt == null) {
