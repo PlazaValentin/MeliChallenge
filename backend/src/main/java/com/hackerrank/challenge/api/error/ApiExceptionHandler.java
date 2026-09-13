@@ -189,59 +189,8 @@ public class ApiExceptionHandler {
         return lastSeparator < 0 ? path : path.substring(lastSeparator + 1);
     }
 
-  
-    ate ResponseEntity<ErrorResp
-        esponseEntity.status(status)
-        .body(ErrorResponse.of(status.value(), de
+  private ResponseEntity<ErrorResponse> respond(HttpStatus status, String description) {
+    return ResponseEntity.status(status)
+        .body(ErrorResponse.of(status.value(), description));
   }
-
-  
-   
-   
-   
-   
-   
-  
-    
-    
-      
-    
-
-    
-    
-    
-      
-    
-
-    
-    
-        
-        
-  
-
-  
-    
-        
-        
-  
-
-  
-    
-  
-
-  
-   
-   * 
-   
-   
-   
-  
-    
-    
-    
-  
-
-  
-    
-        
-  
+}

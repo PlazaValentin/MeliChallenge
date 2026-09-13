@@ -41,12 +41,12 @@ public class OpsController {
       @RequestParam(required = false) UUID sellerId) {
     // Sin anotaciones de validacion: el unico parametro es opcional y su formato
     // ya lo garantiza la conversion a UUID que hace Spring antes de llegar aca.
-    
+
     List<UnresolvedQuestionResponse> items =
+        questionService.listUnresolvedQuestions(sellerId).stream()
+            .map(UnresolvedQuestionResponse::from)
+            .toList();
 
-                    .map(UnresolvedQuestionR         .toList();
-        
-        nse.of(ite
-
-    
-  
+    return ListResponse.of(items);
+  }
+}

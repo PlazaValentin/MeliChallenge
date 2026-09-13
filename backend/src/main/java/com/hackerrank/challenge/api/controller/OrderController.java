@@ -96,21 +96,17 @@ public class OrderController {
    * expresar que un valor sea coherente con otro. Un rango al reves no es una
    * busqueda sin resultados, es una consulta mal armada.
    */
-
-  if (from != null && to != null
-
-   
-
-      }
+  private void requireValidRange(LocalDate from, LocalDate to) {
+    if (from != null && to != null && from.isAfter(to)) {
+      throw new DomainValidationException(
+          "La fecha desde no puede ser posterior a la fecha hasta.");
     }
+  }
 
     /** Preserva el orden de llegada para que el filtro sea estable al depurar. */
     private Set<OrderStatus> normalize(Set<OrderStatus> statuses) {
         return statuses == null || statuses.isEmpty() ? null : new LinkedHashSet<>(statuses);
     }
 }
-
-
-  
 
   
