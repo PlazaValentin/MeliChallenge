@@ -23,8 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 class QuestionImportanceScorerTest {
 
-  private final QuestionImportanceScorer scorer =
-      new QuestionImportanceScorer(ScoringConfigs.standard());
+  private final QuestionImportanceScorer scorer = new QuestionImportanceScorer(ScoringConfigs.standard());
 
   @Nested
   @DisplayName("Tiempo de espera")
@@ -260,15 +259,13 @@ class QuestionImportanceScorerTest {
         "195, CRITICAL"
     })
     void clasificaSegunElUmbralQueAlcanzaElTotal(int total, QuestionPriority expected) {
-      QuestionImportanceScorer singleFactorScorer =
-          new QuestionImportanceScorer(ScoringConfigs.onlyKeyword(total));
+      QuestionImportanceScorer singleFactorScorer = new QuestionImportanceScorer(ScoringConfigs.onlyKeyword(total));
       Order order = TestData.anOrder().build();
       Question question = TestData.aQuestion(order)
           .withText("Texto con " + ScoringConfigs.SINGLE_KEYWORD + " adentro.")
           .build();
 
-      QuestionScore score =
-          singleFactorScorer.score(question, order, TestData.clockAt(TestData.NOW));
+      QuestionScore score = singleFactorScorer.score(question, order, TestData.clockAt(TestData.NOW));
 
       assertThat(score.total()).isEqualTo(total);
       assertThat(score.priority()).isEqualTo(expected);

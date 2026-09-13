@@ -55,6 +55,9 @@ public final class Order {
         if (lines == null || lines.isEmpty()) {
             throw new DomainValidationException("El pedido debe tener al menos una linea.");
         }
+        // Se recorre en vez de usar contains(null): sobre una lista inmutable
+        // (List.of) contains(null) lanza NPE en lugar de responder false, y eso
+        // convertia esta validacion de 400 en un 500.
         if (lines.stream().anyMatch(Objects::isNull)) {
             throw new DomainValidationException("El pedido no puede tener lineas vacias.");
         }

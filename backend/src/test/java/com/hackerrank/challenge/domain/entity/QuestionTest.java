@@ -44,8 +44,7 @@ class QuestionTest {
       OrderLine line = TestData.line("1000.00", 1);
       Order orderWithLine = TestData.anOrder().withLines(List.of(line)).build();
 
-      Question question =
-          Question.on(orderWithLine, line.getProductId(), "Consulta.", TestData.NOW);
+      Question question = Question.on(orderWithLine, line.getProductId(), "Consulta.", TestData.NOW);
 
       assertThat(question.getProductId()).contains(line.getProductId());
     }

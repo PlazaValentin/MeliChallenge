@@ -14,7 +14,7 @@ class BuyerTest {
 
   @ParameterizedTest(name = "un comprador sin nombre valido no existe: [{0}]")
   @NullSource
-  @ValueSource(strings = {"", "   "})
+  @ValueSource(strings = { "", "   " })
   void unCompradorSinNombreValidoNoExiste(String name) {
     assertThatThrownBy(() -> new Buyer(name, "comprador@test.com"))
         .isInstanceOf(DomainValidationException.class);
@@ -26,7 +26,7 @@ class BuyerTest {
    */
   @ParameterizedTest(name = "un comprador sin email valido no existe: [{0}]")
   @NullSource
-  @ValueSource(strings = {"", "   "})
+  @ValueSource(strings = { "", "   " })
   void unCompradorSinEmailValidoNoExiste(String email) {
     assertThatThrownBy(() -> new Buyer("Comprador", email))
         .isInstanceOf(DomainValidationException.class);

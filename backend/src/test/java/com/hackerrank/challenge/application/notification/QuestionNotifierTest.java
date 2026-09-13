@@ -38,7 +38,7 @@ class QuestionNotifierTest {
   private final NotificationPolicy policy = new NotificationPolicy(QuestionPriority.HIGH);
 
   @ParameterizedTest(name = "una pregunta {0} no genera aviso")
-  @EnumSource(value = QuestionPriority.class, names = {"LOW", "MEDIUM"})
+  @EnumSource(value = QuestionPriority.class, names = { "LOW", "MEDIUM" })
   void noAvisaPorPreguntasQueNoAlcanzanElUmbral(QuestionPriority priority) {
     QuestionNotifier notifier = new QuestionNotifier(List.of(email), policy);
 
@@ -49,7 +49,7 @@ class QuestionNotifierTest {
   }
 
   @ParameterizedTest(name = "una pregunta {0} genera aviso")
-  @EnumSource(value = QuestionPriority.class, names = {"HIGH", "CRITICAL"})
+  @EnumSource(value = QuestionPriority.class, names = { "HIGH", "CRITICAL" })
   void avisaPorPreguntasQueAlcanzanElUmbral(QuestionPriority priority) {
     QuestionNotifier notifier = new QuestionNotifier(List.of(email), policy);
     QuestionNotification notification = notificationWith(priority);

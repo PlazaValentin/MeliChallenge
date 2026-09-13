@@ -23,7 +23,7 @@ class OrderLineTest {
   }
 
   @ParameterizedTest(name = "una cantidad de {0} no es valida")
-  @ValueSource(ints = {0, -1})
+  @ValueSource(ints = { 0, -1 })
   void rechazaUnaCantidadQueNoSeaPositiva(int quantity) {
     assertThatThrownBy(() -> line(new BigDecimal("1000.00"), quantity))
         .isInstanceOf(DomainValidationException.class);

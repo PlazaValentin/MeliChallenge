@@ -26,4 +26,31 @@ test {
     reports {
         junitXml.required = true
     }
+
+    // Gradle por defecto solo informa si el build paso o fallo. Se declaran los
+    // eventos para poder leer por consola que se ejecuto y por que fallo, sin
+    // tener que abrir el reporte HTML.
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        // Granularidad 2 arranca el nombre en la clase: sin esto cada linea
+        // viene prefijada por el executor que la corrio, que no aporta nada.
+        displayGranularity = 2
+        showStandardStreams = false
+
+        exceptionFormat = 'full'
+        showExceptions = true
+        showCauses = true
+        showStackTraces = true
+    }
+
+    // Resumen final: el detalle por test no deja ver el total de un vistazo.
+    afterSuite { descriptor, result ->
+        if (descriptor.parent == null) {
+            println "\nResultado: ${result.resultType} | " +
+                    "${result.testCount} tests, " +
+                    "${result.successfulTestCount} exitosos, " +
+                    "${result.failedTestCount} fallidos, " +
+                    "${result.skippedTestCount} salteados"
+        }
+    }
 }

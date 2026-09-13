@@ -17,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * La configuracion se valida al construirse: una config incompleta o incoherente
+ * La configuracion se valida al construirse: una config incompleta o
+ * incoherente
  * debe fallar al levantar la app, no al puntuar la primera pregunta.
  */
 class ScoringConfigTest {
