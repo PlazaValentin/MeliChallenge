@@ -104,9 +104,16 @@ public class OrderService {
      * Cambia el estado del pedido. La validez de la transicion la decide el propio
      * enum a traves de {@link Order#transitionTo}; aca solo se resuelve el pedido y
      * se persiste el resultado.
+     *
+     * <p>
+     * El pedido se resuelve dentro del vendedor de la ruta, igual que en
+     * {@link #findOrderDetail}: la validacion de pertenencia aplica a todos los
+     * endpoints que cuelgan del vendedor, no solo a los de lectura. En una
+     * escritura el riesgo es mayor, porque no se trata de mostrar un pedido ajeno
+     * sino de modificarlo.
      */
-    public Order changeStatus(UUID orderId, OrderStatus newStatus) {
-        Order order = requireOrder(orderId);
+    public Order changeStatus(UUID sellerId, UUID orderId, OrderStatus newStatus) {
+        Order order = requireOrderOfSeller(sellerId, orderId);
         order.transitionTo(newStatus);
         return orderRepository.save(order);
     }
@@ -150,11 +157,6 @@ public class OrderService {
                 .max(Comparator.naturalOrder());
 
         return new OrderAggregates(order.getTotalAmount(), hasPendingQuestions, priority);
-    }
-
-    private Order requireOrder(UUID orderId) {
-        return orderRepository.findById(orderId)
-                .orElseThrow(() -> ResourceNotFoundException.of("el pedido", orderId));
     }
 
     /**

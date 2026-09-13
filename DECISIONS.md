@@ -310,6 +310,13 @@ aceptado en cada una.
   ajeno. No es control de acceso (sigue sin haber login) sino coherencia del
   recurso: si el `sellerId` de la URL no se usara para resolver el pedido, la
   jerarquía de la ruta sería decorativa.
+- **La validación de pertenencia aplica a TODOS los endpoints que cuelgan de la
+  ruta del vendedor, no solo a los de lectura.** Si el `GET` de detalle la valida
+  y el `PATCH` de estado no, quedan dos endpoints bajo la misma ruta con
+  comportamientos distintos. En una escritura el problema es peor: no se trata de
+  mostrar algo ajeno sino de modificarlo. Por eso `changeStatus` recibe el
+  `sellerId` y resuelve el pedido dentro de ese vendedor, devolviendo el mismo
+  `404` con el mismo mensaje que un pedido inexistente.
 - **El ítem de la cola de Operaciones trae `sellerId` y `orderId`**, lo
   mínimo para poder ir a buscar el detalle del pedido desde el botón "ver
   detalle". Suma además el estado y el monto de ese pedido, que son dos de los
@@ -476,6 +483,20 @@ aceptado en cada una.
   el idioma de la respuesta varíe según quién llame. Se prefirió el `message`
   explícito sobre un `ValidationMessages.properties` para que el texto quede a
   la vista junto a la restricción que lo produce.
+- **Los topes de longitud de texto son defensivos, no reglas de negocio.**
+  2000 caracteres para el texto de la pregunta y el de la respuesta, con el mismo
+  criterio que los 120 del buscador de comprador: nadie escribe una consulta de
+  esa extensión, pero el límite evita aceptar un payload absurdo. Cada DTO
+  declara su propio tope junto a la restricción que lo aplica: que hoy coincidan
+  no los vuelve el mismo límite, y compartir una constante habría acoplado dos
+  validaciones que pueden evolucionar por separado.
+- **Un cuerpo ilegible también es `400`.** Un body ausente, mal formado o con un
+  valor que no se puede convertir al tipo esperado (por ejemplo un estado fuera
+  del ciclo de vida) es el equivalente, para el cuerpo, de lo que la conversión
+  de tipos es para los parámetros. Sin mapearlo explícitamente caería en la red
+  de contención y saldría como `500`, atribuyéndole al sistema un error que es de
+  la solicitud. Cuando se puede identificar el campo culpable viaja en `errors`;
+  si el cuerpo directamente no parsea, el array queda vacío.
 
 ## Frontend
 

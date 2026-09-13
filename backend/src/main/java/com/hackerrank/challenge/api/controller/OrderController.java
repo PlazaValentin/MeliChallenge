@@ -1,18 +1,23 @@
 package com.hackerrank.challenge.api.controller;
 
+import com.hackerrank.challenge.api.dto.ChangeOrderStatusRequest;
 import com.hackerrank.challenge.api.dto.ListResponse;
 import com.hackerrank.challenge.api.dto.OrderDetailResponse;
+import com.hackerrank.challenge.api.dto.OrderIdResponse;
 import com.hackerrank.challenge.api.dto.OrderSummaryResponse;
 import com.hackerrank.challenge.application.input.OrderFilter;
 import com.hackerrank.challenge.application.service.OrderService;
 import com.hackerrank.challenge.domain.enums.OrderStatus;
 import com.hackerrank.challenge.domain.exception.DomainValidationException;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -88,6 +93,33 @@ public class OrderController {
       @PathVariable @NotNull UUID orderId) {
 
     return OrderDetailResponse.from(orderService.findOrderDetail(sellerId, orderId));
+  }
+
+  /**
+   * Avanza el pedido a un nuevo estado.
+   *
+   * <p>
+   * Es {@code PATCH} porque solo cambia un estado, y devuelve unicamente el id
+   * del pedido afectado: quien disparo la accion ya sabe que estado pidio.
+   *
+   * <p>
+   * Una transicion que el ciclo de vida no admite responde 409, incluido pedir el
+   * estado que el pedido ya tiene: si el estado actual no admite ir hacia si
+   * mismo, la solicitud es incorrecta y corresponde informarlo en vez de tratarla
+   * como un no-op idempotente (ver DECISIONS.md).
+   *
+   * <p>
+   * El pedido se resuelve dentro del vendedor de la ruta, igual que el detalle:
+   * uno que pertenezca a otro vendedor responde 404.
+   */
+  @PatchMapping("/{orderId}/status")
+  public OrderIdResponse changeStatus(
+      @PathVariable @NotNull UUID sellerId,
+      @PathVariable @NotNull UUID orderId,
+      @RequestBody @Valid ChangeOrderStatusRequest request) {
+
+    return OrderIdResponse.from(
+        orderService.changeStatus(sellerId, orderId, request.status()));
   }
 
   /**

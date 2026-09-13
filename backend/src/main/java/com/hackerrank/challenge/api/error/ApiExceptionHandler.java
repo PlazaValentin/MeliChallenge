@@ -1,5 +1,7 @@
 package com.hackerrank.challenge.api.error;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.hackerrank.challenge.domain.exception.BusinessRuleException;
 import com.hackerrank.challenge.domain.exception.DomainValidationException;
 import com.hackerrank.challenge.domain.exception.ResourceNotFoundException;
@@ -11,6 +13,7 @@ import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -20,6 +23,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -109,6 +113,27 @@ public class ApiExceptionHandler {
     return ResponseEntity.badRequest().body(body);
   }
 
+  /**
+   * Cuerpo ausente, mal formado, o con un valor que no se puede convertir al tipo
+   * esperado (por ejemplo un estado que no pertenece al ciclo de vida). Es el
+   * equivalente para el body de lo que
+   * {@link MethodArgumentTypeMismatchException}
+   * es para los parametros: la conversion es la primera barrera de validacion, y
+   * lo que no tiene forma valida no entra al sistema.
+   *
+   * <p>
+   * Sin este mapeo caeria en la red de contencion y saldria como 500, atribuyendo
+   * al sistema un error que es de la solicitud.
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ErrorResponse> handleUnreadableBody(
+      HttpMessageNotReadableException exception) {
+
+    log.warn("Cuerpo de la solicitud ilegible o mal tipado.");
+    return ResponseEntity.badRequest()
+        .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, bodyErrorsOf(exception)));
+  }
+
   /** Id sintacticamente valido pero que no corresponde a ningun recurso. */
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException exception) {
@@ -132,6 +157,36 @@ public class ApiExceptionHandler {
     return respond(
         HttpStatus.INTERNAL_SERVER_ERROR,
         "Ocurrio un error inesperado. Volve a intentar en unos minutos.");
+  }
+
+  /**
+   * Detalla el campo culpable cuando el cuerpo trajo un valor del tipo
+   * equivocado.
+   * Si el cuerpo directamente no se puede parsear no hay campo al cual atribuirle
+   * el fallo, y el array queda vacio: el contrato garantiza que exista, no que
+   * tenga elementos.
+   */
+  private List<ErrorResponse.FieldError> bodyErrorsOf(HttpMessageNotReadableException exception) {
+    if (!(exception.getCause() instanceof InvalidFormatException invalidFormat)) {
+      return List.of();
+    }
+
+    String field = invalidFormat.getPath().stream()
+        .map(JsonMappingException.Reference::getFieldName)
+        .filter(Objects::nonNull)
+        .reduce((first, second) -> second)
+        .orElse(null);
+
+    if (field == null) {
+      return List.of();
+    }
+
+    Class<?> targetType = invalidFormat.getTargetType();
+    String message = targetType != null && targetType.isEnum()
+        ? "Debe ser uno de: " + String.join(", ", enumValueNames(targetType)) + "."
+        : "No tiene el formato esperado.";
+
+    return List.of(new ErrorResponse.FieldError(field, message));
   }
 
   /**
