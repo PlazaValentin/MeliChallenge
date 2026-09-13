@@ -238,6 +238,15 @@ th {
   color: var(--text-muted);
 }
 
+/* Producto al que refiere la pregunta. Va sobre el turno y no dentro del globo
+   del mensaje: es contexto de la consulta, no algo que el comprador escribio. */
+.chat-product {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
 .chat-actions {
   display: flex;
   gap: 8px;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getOrderDetail } from '../api/client'
+import { answerQuestion, getOrderDetail, resolveQuestion } from '../api/client'
 import { formatDate, formatMoney, orderStatusLabel, shortId } from '../api/labels'
 import QuestionChat from './QuestionChat'
 import { ErrorBanner, Loading, PriorityBadge } from './ui'
@@ -38,6 +38,37 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
   useEffect(() => {
     load()
   }, [load])
+
+  /**
+   * Ejecuta una accion del vendedor y vuelve a pedir el detalle al backend, en
+   * vez de actualizar el estado local con la respuesta: la prioridad y el flag
+   * de preguntas pendientes se derivan al consultar y no se persisten, asi que
+   * recalcularlos aca seria duplicar la regla de negocio en la punta
+   * equivocada. Por eso las acciones devuelven solo el id.
+   */
+  const runAction = useCallback(
+    async (action) => {
+      setError(null)
+      try {
+        await action()
+      } catch (apiError) {
+        setError(apiError)
+        return
+      }
+      await load()
+    },
+    [load],
+  )
+
+  const handleAnswer = useCallback(
+    (questionId, answerText) => runAction(() => answerQuestion(questionId, answerText)),
+    [runAction],
+  )
+
+  const handleResolve = useCallback(
+    (questionId) => runAction(() => resolveQuestion(questionId)),
+    [runAction],
+  )
 
   return (
     <section className="panel">
@@ -93,7 +124,12 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
           <h3>
             Conversacion <PriorityBadge priority={order.priority} />
           </h3>
-          <QuestionChat questions={order.questions} readOnly={readOnly} />
+          <QuestionChat
+            questions={order.questions}
+            readOnly={readOnly}
+            onAnswer={handleAnswer}
+            onResolve={handleResolve}
+          />
         </>
       )}
     </section>

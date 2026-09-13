@@ -48,6 +48,6 @@ public record OrderDetailResponse(
         aggregates.totalAmount(),
         aggregates.hasPendingQuestions(),
         aggregates.priority().orElse(null),
-        detail.questions().stream().map(QuestionResponse::from).toList());
+        detail.questions().stream().map(question -> QuestionResponse.from(question, order)).toList());
   }
 }

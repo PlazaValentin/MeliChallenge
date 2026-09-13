@@ -426,6 +426,19 @@ aceptado en cada una.
   numérico**, sino una categoría derivada del score (ej. score > 100 →
   "Crítica"), pensada para lectura rápida por el vendedor. Los umbrales
   concretos quedan a definir.
+- **La pregunta del detalle viaja con el nombre del producto ya resuelto**, no
+  solo con su id. El frontend podría cruzarlo contra las líneas del pedido, pero
+  eso sería que el cliente reconstruya una relación que el backend ya conoce, y
+  dejaría de funcionar para cualquier otro consumidor de la API. El nombre sale
+  de la línea del pedido y no del catálogo: la línea es el registro histórico de
+  lo que se compró, así que si el producto se renombró después, la pregunta sigue
+  hablando del nombre que el comprador vio.
+- **Un producto referenciado que no está entre las líneas del pedido es un `500`.**
+  La invariante del dominio ya garantiza que no puede pasar, así que si pasa es un
+  defecto del sistema, no de quien consulta: mismo criterio que una pregunta que
+  referencia un pedido inexistente. Devolver el nombre vacío escondería el dato
+  corrupto para siempre. El mensaje del log lleva los ids de pregunta, producto y
+  pedido para poder ubicar el caso, sin PII.
 - **Preguntas embebidas en el detalle del pedido:** el pedido y sus
   preguntas se consultan juntos porque se usan juntos; separarlos
   obligaría al frontend a hacer dos llamadas por cada pedido consultado.
@@ -684,6 +697,27 @@ aceptado en cada una.
   recalcularlos en el cliente sería duplicar la regla de negocio en la punta
   equivocada. Las acciones devuelven solo el id, justamente porque no son la
   fuente de verdad del recurso actualizado.
+- **Volver del detalle recarga el listado.** La prioridad y el flag de preguntas
+  pendientes se derivan al consultar, así que responder o resolver desde el
+  detalle los deja viejos en el listado que quedó en memoria. Se recarga siempre
+  al volver, y no solo cuando hubo una acción, para no tener que llevar la cuenta
+  de si el detalle modificó algo: el costo es un llamado de más cuando el
+  vendedor solo miró.
+- **Las acciones del vendedor las dispara el detalle, no el chat.** `OrderDetail`
+  hace la llamada, muestra el error en su banner y recarga; el chat recibe dos
+  callbacks y queda de presentación. Es lo que lo mantiene reutilizable en
+  Operaciones: si el chat importara el cliente de API, sabría de un endpoint que
+  en esa vista nunca puede invocar, y el error tendría que subir igual al banner
+  del detalle.
+- **El texto de la respuesta y el "en vuelo" viven en cada turno**, no en un mapa
+  por pregunta en el chat: son datos que no se usan fuera del turno al que
+  pertenecen. Mientras la acción está en vuelo el botón se deshabilita, porque un
+  doble click sobre "Responder" sería un `409` (una pregunta admite una sola
+  respuesta) y le mostraría al vendedor un error que no cometió.
+- **Las acciones se ofrecen según el estado de la pregunta y nunca las dos a la
+  vez.** Responder y resolver son secuenciales (`OPEN → ANSWERED → RESOLVED`), así
+  que ofrecer "resolver" sobre una pregunta abierta sería ofrecer una transición
+  que el backend rechaza. Una pregunta ya resuelta no muestra ninguna.
 - **El componente de la vista del vendedor se remonta al cambiar de vendedor.**
   Sin eso, quedaría mostrando los pedidos del vendedor anterior mientras llegan
   los nuevos, que es peor que no mostrar nada: el usuario no tiene forma de

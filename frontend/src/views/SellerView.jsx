@@ -39,7 +39,15 @@ function SellerView({ sellerId, selectedOrderId, onSelectOrder }) {
       <OrderDetail
         sellerId={sellerId}
         orderId={selectedOrderId}
-        onBack={() => onSelectOrder(null)}
+        // Al volver se recarga el listado: la prioridad y el flag de preguntas
+        // pendientes se derivan al consultar, asi que las acciones hechas en el
+        // detalle los cambiaron y lo que hay en memoria quedo viejo. Se recarga
+        // siempre y no solo cuando hubo una accion, para no tener que llevar la
+        // cuenta de si el detalle modifico algo.
+        onBack={() => {
+          onSelectOrder(null)
+          load()
+        }}
       />
     )
   }
