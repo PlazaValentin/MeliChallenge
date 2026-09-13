@@ -260,6 +260,11 @@ aceptado en cada una.
   (`POST /api/orders/{orderId}/questions`) porque una pregunta no existe
   sin un pedido al cual pertenecer; las acciones sobre una pregunta ya
   creada operan sobre su propio id.
+- **`QuestionController` no declara `@RequestMapping` a nivel de clase.** Sus
+  rutas cuelgan de dos bases distintas a propósito (una del pedido, las otras de
+  la pregunta), así que cada método declara su ruta completa. Forzar un prefijo
+  común obligaría a partir el controller en dos o a deformar alguna de las rutas
+  para que encaje.
 - **Operaciones tiene su propio controller**, separado del de preguntas:
   es otra audiencia, con otro propósito y otra pantalla.
 - **Verbos según el efecto real de la acción:** `POST` para responder,
@@ -291,6 +296,14 @@ aceptado en cada una.
   afectado**, tanto para el pedido como para la pregunta. Quien disparó la
   acción ya sabe qué estado pidió; si necesita el recurso actualizado, lo
   consulta.
+- **El campo del id se llama `orderId` o `questionId`, no `id`.** Son dos
+  respuestas distintas y no un tipo genérico reutilizado: el nombre explícito
+  dice de qué recurso se trata sin depender del contexto de la llamada, y hace
+  legible el log del frontend, donde un `id` suelto no se puede atribuir a nada.
+  El costo es un record más, que es barato.
+- **`PATCH /api/questions/{questionId}/resolve` va sin cuerpo.** Resolver no
+  necesita ningún dato más allá de la pregunta sobre la que opera; un body vacío
+  obligatorio sería ceremonia sin información.
 - **La creación de una pregunta no devuelve clasificación ni score.**
   Quien usa ese endpoint es el comprador (aunque no exista como entidad en
   esta demo) y no tiene sentido que sepa qué nivel de criticidad se le
