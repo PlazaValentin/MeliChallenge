@@ -3,27 +3,45 @@
 // conoce la forma del cuerpo de error; el resto de la app trabaja con datos ya
 // parseados o con una excepcion.
 
-// URL absoluta y no una ruta relativa con proxy de Vite: el backend habilita
-// CORS para este origen a proposito (app.cors.allowed-origin), y un proxy
-// enmascararia justamente lo que el CORS resuelve.
-//
-// Sale de una variable de entorno y no de una constante, por el mismo motivo
-// por el que el origen permitido no esta hardcodeado del lado del backend: son
-// las dos mitades del mismo acuerdo, y si una se puede mover sin recompilar, la
-// otra tambien. Se declara en frontend/.env.
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+/** Puerto del frontend, el que declara vite.config.js. */
+const FRONTEND_PORT = '3000'
 
-// Sin valor por defecto, con el mismo criterio que app.seed.enabled y
-// app.cors.allowed-origin: la variable tiene que estar declarada para que
-// contra donde apunta el frontend se lea en el .env y no en una linea de
-// codigo. Falla al cargar el modulo y no en la primera llamada, para que una
-// configuracion incompleta se note al arrancar y no recien cuando alguien
-// aprieta un boton.
-if (!BASE_URL) {
-  throw new Error(
-    'Falta la variable VITE_API_BASE_URL. Declarala en frontend/.env con la URL del backend.',
-  )
+/** Puerto del backend, el que declara server.port en application.properties. */
+const BACKEND_PORT = '8080'
+
+/**
+ * URL del backend.
+ *
+ * Se deriva del host desde el que se abrio la pagina, reemplazando el puerto del
+ * frontend por el del backend. No puede ser un valor fijo: el entorno de
+ * evaluacion sirve el frontend detras de un proxy con un host generado por
+ * sesion (vm-xxx-3000.hrcdn.net), donde `localhost` es la maquina del navegador
+ * y no la que corre la API.
+ *
+ * VITE_API_BASE_URL funciona como override, para poder apuntar a un backend que
+ * no este en el mismo host que el frontend.
+ *
+ * Se mantiene una URL absoluta en lugar de un proxy de Vite sobre rutas
+ * relativas: el proxy haria que las llamadas salgan del mismo origen y el CORS
+ * dejaria de intervenir, cuando es justamente parte del contrato declarado.
+ */
+function resolveBaseUrl() {
+  const override = import.meta.env.VITE_API_BASE_URL
+  if (override) return override
+
+  const { protocol, hostname, host } = window.location
+
+  // Desarrollo local: el host trae el puerto y alcanza con cambiarlo.
+  if (host.includes(`:${FRONTEND_PORT}`)) {
+    return `${protocol}//${host.replace(`:${FRONTEND_PORT}`, `:${BACKEND_PORT}`)}`
+  }
+
+  // Detras del proxy el puerto viaja en el nombre del host y no como puerto
+  // real, asi que el reemplazo se hace sobre el hostname.
+  return `${protocol}//${hostname.replace(FRONTEND_PORT, BACKEND_PORT)}`
 }
+
+const BASE_URL = resolveBaseUrl()
 
 /**
  * Error de la API con el cuerpo unico que devuelve el handler centralizado.

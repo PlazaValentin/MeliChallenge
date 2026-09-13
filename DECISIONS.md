@@ -307,15 +307,22 @@ aceptado en cada una.
   frontend mapea esos valores a etiquetas en español para el usuario.
 - **Ids: UUID**, por escalabilidad y por permitir truncarlos para
   mostrarlos en demos/UI sin exponer un id secuencial.
-- **CORS** habilitado para el origen del frontend. El origen viaja en
-  configuración (`app.cors.allowed-origin`) y no como constante en el código,
-  con el mismo criterio que el resto de `app.*`: el frontend puede servirse
-  desde otro puerto o máquina sin recompilar el backend. Se habilitan solo los
-  métodos del contrato (`GET`, `POST`, `PATCH`); `OPTIONS` no se declara porque
-  el preflight lo responde el propio soporte de CORS antes de llegar a un
-  controller, y listarlo sugeriría que hay un endpoint que lo atiende. Tampoco
-  se habilitan credenciales: no hay login ni cookies de sesión, y permitirlas
-  sería abrir algo que la aplicación no usa.
+- **CORS** habilitado para el origen del frontend. Los orígenes viajan en
+  configuración (`app.cors.allowed-origin-patterns`) y no como constante en el
+  código, con el mismo criterio que el resto de `app.*`: el frontend puede
+  servirse desde otro puerto o máquina sin recompilar el backend. Se habilitan
+  solo los métodos del contrato (`GET`, `POST`, `PATCH`); `OPTIONS` no se
+  declara porque el preflight lo responde el propio soporte de CORS antes de
+  llegar a un controller, y listarlo sugeriría que hay un endpoint que lo
+  atiende. Tampoco se habilitan credenciales: no hay login ni cookies de sesión,
+  y permitirlas sería abrir algo que la aplicación no usa.
+- **La propiedad admite varios orígenes y acepta patrones, no valores
+  literales.** El entorno de evaluación sirve el frontend detrás de un proxy
+  cuyo host se genera por sesión (`vm-xxx-3000.hrcdn.net`), así que no hay un
+  origen que se pueda escribir de antemano. Se declaran un patrón acotado al
+  dominio del proxy y el `localhost` del desarrollo local; un comodín suelto
+  habría resuelto lo mismo abriendo la API a cualquier origen, que es
+  exactamente lo que CORS existe para impedir.
 - **Las preguntas tienen su propio controller**, por segmentación de
   responsabilidades. No quedan anidadas bajo el vendedor: el listado de
   preguntas ya trae los datos del vendedor y el id del pedido por si se
@@ -623,14 +630,23 @@ aceptado en cada una.
   resuelve dentro del vendedor de la ruta, así que un pedido de otro vendedor
   respondería `404`; conservarlo dejaría la pantalla apuntando a algo que no
   puede existir.
-- **La URL del backend viaja en una variable de entorno**
-  (`VITE_API_BASE_URL`, en `frontend/.env`), no como constante en el código. Es
-  la otra mitad del mismo acuerdo que `app.cors.allowed-origin`: si un extremo
-  se puede mover sin recompilar, el otro también. No tiene valor por defecto, con
-  el mismo criterio que el resto de la configuración, y la ausencia se verifica
-  al cargar el módulo y no en la primera llamada, para que una configuración
-  incompleta rompa al arrancar y no cuando alguien aprieta un botón. El archivo
-  se versiona: no guarda secretos, y sin él la aplicación no levanta.
+- **La URL del backend se deriva del host del navegador**, reemplazando el
+  puerto del frontend por el del backend sobre `window.location`. No puede ser
+  un valor fijo: el entorno de evaluación sirve el frontend detrás de un proxy
+  con un host generado por sesión, donde `localhost` es la máquina del
+  navegador y no la que corre la API. Una URL apuntando a `localhost:8080`
+  funciona al probar con `curl` desde dentro del contenedor y falla en el
+  navegador, que es exactamente el síntoma que se observó. Derivarla del host
+  actual funciona en los dos contextos sin configuración por ambiente.
+- **`VITE_API_BASE_URL` queda como override, no como valor obligatorio.** Sirve
+  para el caso en que el backend no esté en el mismo host que el frontend, que
+  no es el de esta entrega. Se prefirió esto a exigirla siempre, porque un valor
+  obligatorio volvería a atar el frontend a un host conocido de antemano, que es
+  justamente lo que no se puede asumir.
+- **No se usa el proxy de Vite para evitar el problema.** Habría resuelto la
+  conexión haciendo que las llamadas salgan del mismo origen, pero con eso el
+  CORS dejaría de intervenir, y el CORS es parte del contrato declarado. La
+  solución no puede consistir en desactivar lo que se está entregando.
 - **Toda respuesta se parsea de forma tolerante.** El cuerpo se lee como texto y
   se intenta parsear aparte, porque `response.json()` no distingue "no hay
   cuerpo" de "el cuerpo no es JSON" y ambos casos terminan en la misma excepción
@@ -657,6 +673,21 @@ aceptado en cada una.
   noticia) y un pedido sin preguntas. Este último es lo normal y no una
   anomalía: la sección del chat no se oculta, porque un bloque ausente no se
   distingue de uno que todavía carga o que falló.
+- **El detalle del pedido hace su propia consulta**, en vez de recibir el pedido
+  ya cargado desde la vista que lo abre. El backend devuelve líneas y preguntas
+  juntas en un solo llamado, y que el componente se traiga lo que necesita evita
+  que cada una de las dos vistas tenga que saber cómo se arma el detalle. Es lo
+  que lo hace reutilizable entre vendedor y Operaciones sin condicionales.
+- **Después de una acción se recarga el detalle desde el backend**, en lugar de
+  actualizar el estado local con la respuesta. El score, la prioridad y el flag
+  de preguntas pendientes se derivan al consultar y no se persisten, así que
+  recalcularlos en el cliente sería duplicar la regla de negocio en la punta
+  equivocada. Las acciones devuelven solo el id, justamente porque no son la
+  fuente de verdad del recurso actualizado.
+- **El componente de la vista del vendedor se remonta al cambiar de vendedor.**
+  Sin eso, quedaría mostrando los pedidos del vendedor anterior mientras llegan
+  los nuevos, que es peor que no mostrar nada: el usuario no tiene forma de
+  saber que lo que está leyendo ya no corresponde a lo que seleccionó.
 
 ## Testing
 

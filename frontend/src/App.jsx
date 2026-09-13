@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SellerView from './views/SellerView'
 
 /**
  * Vendedores disponibles, con sus ids del seed.
@@ -76,12 +77,19 @@ function App() {
       </header>
 
       <main>
-        {/* Las vistas se implementan en los bloques siguientes. */}
-        <p className="empty">
-          Vista <strong>{view}</strong>
-          {view === 'seller' ? ` — vendedor ${sellerId}` : ''}
-          {selectedOrderId ? ` — pedido ${selectedOrderId}` : ''}
-        </p>
+        {view === 'seller' ? (
+          <SellerView
+            // Remonta la vista al cambiar de vendedor, para que no quede
+            // mostrando los pedidos del anterior mientras llegan los nuevos.
+            key={sellerId}
+            sellerId={sellerId}
+            selectedOrderId={selectedOrderId}
+            onSelectOrder={setSelectedOrderId}
+          />
+        ) : (
+          // La vista de Operaciones se implementa en el bloque 4.
+          <p className="empty">Vista de Operaciones pendiente.</p>
+        )}
       </main>
     </div>
   )
