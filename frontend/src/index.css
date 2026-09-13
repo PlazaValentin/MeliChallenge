@@ -279,6 +279,28 @@ th {
   margin-bottom: 16px;
 }
 
+/* Los cinco estados van en un fieldset: son un solo filtro con varias opciones,
+   y la leyenda los rotula sin repetir la etiqueta en cada casilla. */
+.filter-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.filter-statuses legend {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.filter-check {
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+}
+
 /* Cola de Operaciones */
 
 .row-actions {

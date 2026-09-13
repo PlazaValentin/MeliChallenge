@@ -555,6 +555,13 @@ aceptado en cada una.
   dataset es cobertura de casos de negocio, y un límite de configuración se
   verifica en los tests, que es donde no cuesta nada construir el caso
   extremo.
+- **Tres compradores del dataset llevan acento** (`Lucía Fernández`,
+  `Marcos Díaz`, `Carla Gómez`). La búsqueda de comprador normaliza acentos, y
+  con todos los nombres escritos sin ellos esa regla no se podía mostrar: buscar
+  "lucia" y que aparezca "Lucía" es lo que hace visible el comportamiento. A
+  diferencia del techo de palabras clave, acá el caso no es artificial: un nombre
+  acentuado es lo que cabe esperar del dominio, y era el dataset el que no lo
+  reflejaba.
 
 ## Validación de la entrada
 
@@ -753,6 +760,32 @@ aceptado en cada una.
   posible que la invalide, pero la cola es global y puede haber otro operador —o
   el propio vendedor— trabajando sobre las mismas preguntas mientras se mira el
   detalle.
+- **Los filtros del listado se aplican solos, sin botón de "Filtrar".** Estado y
+  fechas son eventos discretos y disparan la consulta al cambiar. El texto del
+  comprador va con un retardo de 300 ms: sin él, cada tecla dispara una request y
+  las respuestas pueden llegar desordenadas, dejando en pantalla el resultado de
+  una búsqueda vieja sobre lo que se escribió después. Sí hay botón de limpiar,
+  que se deshabilita cuando no hay nada que limpiar.
+- **El texto que se tipea y el que se busca son dos estados distintos.** El input
+  refleja el primero sin esperar nada, y la consulta usa el segundo. Con un solo
+  valor, el retardo se sentiría como una demora al escribir.
+- **Los cinco estados son checkboxes, no un `select multiple`.** La multiselección
+  nativa exige ctrl/cmd+click y no se descubre sola. Ninguno tildado significa
+  "todos": es la ausencia del filtro, no un filtro que no matchea nada.
+- **Las fechas viajan tal como las devuelve el input**, que ya usa `yyyy-MM-dd`,
+  el formato que el backend espera. Convertirlas a `Date` en el medio solo
+  agregaría un corrimiento de zona horaria sobre el día que el usuario eligió.
+- **El rango invertido no se previene en el frontend.** El backend lo valida y
+  devuelve `400`; el banner lo muestra como cualquier otro error. Adelantar la
+  validación significaría mantener la misma regla en las dos puntas, y la
+  respuesta del servidor sigue siendo la que manda.
+- **Un filtro sin resultados dice que no hubo coincidencias, no que no hay
+  pedidos.** Son dos vacíos distintos: sin filtros, el vendedor no tiene pedidos;
+  con filtros, los tiene pero ninguno matchea. Un solo texto para ambos haría
+  pensar que el listado está vacío cuando en realidad está acotado.
+- **Los filtros son un componente aparte de la tabla.** Uno toma la entrada del
+  usuario y la otra muestra el resultado; juntos darían un archivo donde el markup
+  del formulario tapa el del listado.
 
 ## Testing
 

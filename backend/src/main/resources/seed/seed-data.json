@@ -59,7 +59,7 @@
     {
       "id": "30000000-0000-0000-0000-000000000001",
       "sellerId": "10000000-0000-0000-0000-000000000001",
-      "buyerName": "Lucia Fernandez",
+      "buyerName": "Lucía Fernández",
       "buyerEmail": "lucia.f@mail.com",
       "status": "PENDING",
       "offsetDays": 0,
@@ -75,7 +75,7 @@
     {
       "id": "30000000-0000-0000-0000-000000000002",
       "sellerId": "10000000-0000-0000-0000-000000000001",
-      "buyerName": "Marcos Diaz",
+      "buyerName": "Marcos Díaz",
       "buyerEmail": "mdiaz@mail.com",
       "status": "CONFIRMED",
       "offsetDays": 1,
@@ -91,7 +91,7 @@
     {
       "id": "30000000-0000-0000-0000-000000000003",
       "sellerId": "10000000-0000-0000-0000-000000000001",
-      "buyerName": "Carla Gomez",
+      "buyerName": "Carla Gómez",
       "buyerEmail": "carla.gomez@mail.com",
       "status": "SHIPPED",
       "offsetDays": 2,
@@ -199,7 +199,7 @@
     {
       "id": "30000000-0000-0000-0000-000000000009",
       "sellerId": "10000000-0000-0000-0000-000000000002",
-      "buyerName": "Lucia Fernandez",
+      "buyerName": "Lucía Fernández",
       "buyerEmail": "lucia.f@mail.com",
       "status": "SHIPPED",
       "offsetDays": 4,
