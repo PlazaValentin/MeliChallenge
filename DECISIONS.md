@@ -518,6 +518,15 @@ aceptado en cada una.
   prioridad, e incluye tanto un caso que supera el umbral de notificación como
   un pedido con varias preguntas sin resolver de scores contrastantes, para que
   se vea que la prioridad del pedido es el máximo y no la suma.
+- **El dataset no ejercita el techo del factor de palabras clave, y se decidió
+  dejarlo así.** Ninguna pregunta del seed supera las cinco palabras distintas
+  (el máximo es justo 50, el propio techo), así que el tope nunca recorta en la
+  demo y ningún score cambió al introducirlo. Forzar una sexta palabra
+  distinta habría requerido una pregunta que acumule seis insultos sin
+  repetirse, un texto que no se parece a una consulta real: el criterio del
+  dataset es cobertura de casos de negocio, y un límite de configuración se
+  verifica en los tests, que es donde no cuesta nada construir el caso
+  extremo.
 
 ## Validación de la entrada
 
