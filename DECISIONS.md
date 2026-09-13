@@ -977,11 +977,14 @@ aceptado en cada una.
   Un evolutivo sería habilitar un canal de Operaciones con el comprador,
   separado del chat del vendedor.
 
-## Ambigüedades detectadas, a definir por el autor del proyecto
+## Ambigüedades detectadas y su resolución
 
-Estos puntos surgieron durante la conversación y quedaron mencionados
-como "a definir" o "supongamos" sin un valor cerrado. Se listan aparte
-para no fijarlos por cuenta propia:
+Estos puntos surgieron durante la conversación mencionados como "a definir" o
+"supongamos", sin un valor cerrado. Se listaron aparte para no fijarlos por
+cuenta propia, y quedaron todos resueltos al implementar el flujo que dependía
+de cada uno. Se conservan con su enunciado original tachado, en vez de
+borrarlos, porque el registro de qué estaba abierto y cómo se cerró es parte de
+lo que este documento existe para dejar asentado:
 
 - ~~**Umbrales exactos de la categorización de prioridad** que se muestra
   en el listado de pedidos del vendedor (se mencionó "score > 100 =
