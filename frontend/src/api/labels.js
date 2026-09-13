@@ -13,13 +13,16 @@ export const ORDER_STATUS_LABELS = {
   CANCELLED: 'Cancelado',
 }
 
-export const QUESTION_STATUS_LABELS = {
+// Estos dos no se exportan: se consumen solo a traves de su funcion de
+// traduccion. ORDER_STATUS_LABELS si, porque el filtro de estados del listado
+// recorre sus entradas para pintar un checkbox por estado.
+const QUESTION_STATUS_LABELS = {
   OPEN: 'Sin responder',
   ANSWERED: 'Respondida',
   RESOLVED: 'Resuelta',
 }
 
-export const PRIORITY_LABELS = {
+const PRIORITY_LABELS = {
   LOW: 'Baja',
   MEDIUM: 'Media',
   HIGH: 'Alta',

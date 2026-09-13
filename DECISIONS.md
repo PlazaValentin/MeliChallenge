@@ -96,8 +96,8 @@ aceptado en cada una.
 - **El listado trae agregados por pedido**: costo total y categoría de
   prioridad derivada del score (no el score numérico), más un flag de
   preguntas pendientes. Los mismos agregados se exponen también en el
-  detalle del pedido. Los umbrales de la categorización quedan a definir
-  (ver sección de ambigüedades).
+  detalle del pedido. Los umbrales de la categorización están definidos en
+  "Scoring de importancia" y viven en `app.scoring.classification-thresholds`.
 - **El flag de preguntas no es un contador.** No se expone la cantidad de
   preguntas: solo un flag que le indica al vendedor que debe abrir el
   modal para responder. No es un "leído/no leído", es un
@@ -423,9 +423,9 @@ aceptado en cada una.
   score total y su desglose por factor, para que Operaciones pueda
   interpretar y eventualmente ayudar a ajustar la fórmula.
 - **En el listado de pedidos del vendedor no se devuelve el score
-  numérico**, sino una categoría derivada del score (ej. score > 100 →
-  "Crítica"), pensada para lectura rápida por el vendedor. Los umbrales
-  concretos quedan a definir.
+  numérico**, sino una categoría derivada del score (a partir de 130 →
+  `CRITICAL`), pensada para lectura rápida por el vendedor. Los umbrales
+  concretos están definidos en "Scoring de importancia".
 - **La pregunta del detalle viaja con el nombre del producto ya resuelto**, no
   solo con su id. El frontend podría cruzarlo contra las líneas del pedido, pero
   eso sería que el cliente reconstruya una relación que el backend ya conoce, y
@@ -983,12 +983,17 @@ Estos puntos surgieron durante la conversación y quedaron mencionados
 como "a definir" o "supongamos" sin un valor cerrado. Se listan aparte
 para no fijarlos por cuenta propia:
 
-- **Umbrales exactos de la categorización de prioridad** que se muestra
+- ~~**Umbrales exactos de la categorización de prioridad** que se muestra
   en el listado de pedidos del vendedor (se mencionó "score > 100 =
-  Crítica" solo como ejemplo, no como valor definitivo).
-- **Valores numéricos concretos de las brechas de tiempo, monto y estado**
+  Crítica" solo como ejemplo, no como valor definitivo)~~: **resuelto**. Los
+  valores quedaron fijados en "Scoring de importancia": `LOW` por debajo de 50,
+  `MEDIUM` de 50 a 89, `HIGH` de 90 a 129 y `CRITICAL` desde 130. Viven en
+  `app.scoring.classification-thresholds`, no en el código.
+- ~~**Valores numéricos concretos de las brechas de tiempo, monto y estado**
   usados en el scoring (los ejemplos dados —10/20/30/50, o 5/30 para
-  estados— son ilustrativos de la idea, no la configuración final).
+  estados— son ilustrativos de la idea, no la configuración final)~~:
+  **resuelto**. Los cuatro factores quedaron con sus tramos y techos definidos
+  en "Scoring de importancia" y declarados en `app.scoring.*`.
 - ~~**Exposición del endpoint de creación de preguntas en el frontend**~~:
   **resuelto**. Se expone como un formulario al pie del chat, en el detalle del
   pedido, rotulado explícitamente como simulación del comprador. Es lo único
@@ -996,6 +1001,9 @@ para no fijarlos por cuenta propia:
   el objetivo solo se puede mostrar con `curl`. Queda en la vista del vendedor
   y no como un tercer rol en el selector, porque el comprador no es una entidad
   del modelo y darle una vista propia sugeriría lo contrario.
-- **Reglas concretas de validación de entrada** (longitudes mínimas y
+- ~~**Reglas concretas de validación de entrada** (longitudes mínimas y
   máximas de textos, campos obligatorios): se definen al implementar cada
-  flujo, no por anticipado.
+  flujo, no por anticipado~~: **resuelto**. Se definieron al implementar cada
+  flujo y están en "Validación de la entrada": 2000 caracteres para el texto de
+  la pregunta y el de la respuesta, 120 para el buscador de comprador, y los
+  campos obligatorios declarados con `@NotBlank` en cada DTO.
