@@ -39,6 +39,21 @@ La salida por consola informa cada test y cierra con un resumen. Gradle cachea
 la tarea, así que para volver a correrla sin cambios de por medio hay que usar
 `gradle test --rerun-tasks`.
 
+El criterio de qué se testea y qué no, y por qué, está en
+[DECISIONS.md](DECISIONS.md), sección "Testing".
+
+### Notas de entorno
+
+Dos cosas que no se deducen del código y hacen perder tiempo:
+
+- **El proyecto no incluye Gradle wrapper.** `./gradlew` falla; hay que invocar
+  `gradle` directamente.
+- **Si el puerto 8080 responde con datos que no se corresponden con el código,**
+  suele haber un `bootRun` anterior todavía vivo. Conviene verificar con
+  `netstat -lptn | grep 8080` antes de diagnosticar el problema en el código:
+  el proceso viejo sirve las clases con las que arrancó y, como el store es en
+  memoria, también el estado que haya mutado desde entonces.
+
 ## Hallazgos
 
 ### Una lista inmutable hacía fallar la validación de invariantes con NPE

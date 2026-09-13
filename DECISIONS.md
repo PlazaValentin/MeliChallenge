@@ -572,6 +572,67 @@ aceptado en cada una.
 - **Mapeo de labels en el frontend:** los valores de enum llegan en inglés
   desde la API y el frontend los traduce a etiquetas en español.
 
+## Testing
+
+- **Ningún test levanta el contexto de Spring** (salvo el `contextLoads` que
+  venía con el scaffold). Las reglas que importan —scoring, transiciones,
+  invariantes, derivación de agregados, despacho de notificaciones— son lógica
+  propia y se ejercitan instanciando las clases. Levantar el contexto para
+  verificarlas agregaría segundos de arranque por clase sin verificar nada
+  adicional.
+- **Los tests arman sus propios datos, no usan el seed.** El seed existe para
+  la demo; que un test dependa de él haría que cambiar el dataset rompa tests
+  sin que haya cambiado ninguna regla. Se usan builders
+  (`TestData.anOrder()`, `TestData.aQuestion(order)`) con valores por defecto
+  válidos, donde cada test sobreescribe solo el campo que le importa.
+- **El builder de pedidos llega a un estado recorriendo el ciclo de vida**, no
+  forzando el campo. Que no se pueda construir un `Order` directamente en
+  `SHIPPED` es una invariante, y saltearla desde el test la dejaría sin
+  proteger justo donde se la verifica.
+- **Reloj fijo donde el tiempo interviene.** El factor tiempo del scoring es
+  sensible al instante de evaluación: con el reloj real, los tests de brechas
+  serían flaky. Se usa un `Clock` fijo y se envejece la pregunta moviendo el
+  reloj, no esperando.
+- **Dobles con Mockito**, que ya viene en `spring-boot-starter-test`. Se
+  prefirió a escribir fakes a mano: el objetivo de esos tests es aislar la
+  pieza bajo prueba, no ejercitar una implementación alternativa del
+  repositorio.
+- **La configuración de scoring de los tests se declara, no se lee de
+  `application.properties`.** Leerla ataría los tests al arranque de Spring y
+  volvería ambiguo un fallo (¿cambió la regla o cambió la config?). La
+  contrapartida asumida: si los valores de configuración cambian, hay que
+  actualizar los tests que afirman puntajes concretos. Es deliberado, son la
+  traducción ejecutable de lo acordado acá.
+- **Los bordes de la clasificación se verifican con una configuración de un
+  solo factor.** Con los puntajes reales, todos múltiplos de cinco, los valores
+  de borde (49, 89, 129) no son alcanzables sumando factores; una config donde
+  una única palabra clave vale lo que se le indique permite fijar un total
+  exacto y verificar el umbral, que es lo que se quiere probar.
+- **Los nombres de los tests describen el comportamiento esperado**, no el
+  método que ejercitan: `unaPreguntaAbiertaNoPuedeResolverseSinSerRespondida`
+  dice qué regla se rompe si falla; `testResolve` no.
+- **La validación del rango de fechas se prueba instanciando el controller.**
+  Es lógica propia (involucra dos campos, y ninguna anotación puede expresar
+  que un valor sea coherente con otro), así que se ejercita directo con un
+  doble del service, sin `MockMvc`. No se extrajo la regla a una clase aparte:
+  es una sola condición y moverla solo para hacerla testeable habría cambiado
+  código productivo sin necesidad.
+- **Lo que deliberadamente no se testea:** las anotaciones de Bean Validation
+  (es testear a Spring), el repositorio en memoria (es un `ConcurrentHashMap`
+  con getters), los getters y constructores triviales, y las invariantes de
+  `Product` y `Seller`, que son campos obligatorios equivalentes a los de
+  `Buyer` y no agregan cobertura real sobre lo ya verificado.
+- **Se verificó que los tests fallan cuando la regla cambia.** Para las dos
+  afirmaciones centrales —que la prioridad del pedido es el máximo y no la
+  suma, y que el desempate es por antigüedad— se mutó a propósito el código
+  productivo (`max` por `min`, y quitando el criterio de desempate) y se
+  confirmó que la suite los detecta. Sin esa comprobación, un test que pasa no
+  distingue entre verificar y acompañar.
+- **La salida de tests se configura en el build** (`testLogging` con eventos y
+  un resumen final). Gradle por defecto solo informa si el build pasó o falló,
+  y el detalle quedaba únicamente en el reporte HTML. Se prefirió configurarlo
+  en `build.gradle` antes que dejar un script de utilidad suelto en el repo.
+
 ## Alcance excluido (declarado)
 
 - Autenticación, multi-tenancy, paginación, devoluciones, hilo de
