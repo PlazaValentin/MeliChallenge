@@ -798,6 +798,35 @@ aceptado en cada una.
 - **El formulario se limpia aunque la creación falle.** El error queda en el
   banner; conservar el texto de un intento fallido invita a reenviar exactamente
   lo mismo, que va a fallar igual.
+- **La cola de Operaciones se refresca sola cada 30 segundos, en silencio.** Es
+  la única vista donde el dato se desactualiza sin que el usuario haga nada: la
+  cola es global y otro operador —o el propio vendedor— puede estar resolviendo
+  las mismas preguntas. El refresco automático no toca el estado de carga, porque
+  parpadear un indicador cada 30 segundos sobre datos que siguen en pantalla
+  anunciaría una actividad que nadie disparó. La vista del vendedor no lo lleva:
+  ahí el usuario es el único que modifica lo que mira, y ya se recarga al volver
+  del detalle.
+- **Silencioso es el refresco automático, no toda recarga.** El corte no es
+  "primera carga contra el resto" sino acción del usuario contra refresco de
+  fondo: cambiar el filtro de vendedor y volver del detalle sí muestran el estado
+  de carga y ocultan la tabla, porque dejar las filas del vendedor anterior junto
+  al indicador no permite distinguir si el filtro no matcheó o la consulta sigue
+  en vuelo. Es el mismo criterio por el que la vista del vendedor se remonta al
+  cambiar de vendedor.
+- **Un refresco que falla muestra el error pero no vacía la lista.** Lo que está
+  en pantalla se consultó bien y sigue siendo un estado válido del sistema;
+  borrarlo por un fallo de red dejaría a Operaciones sin la cola que ya tenía, que
+  es peor que tenerla algo vieja. El banner avisa, y la marca de actualización
+  queda clavada en el último refresco exitoso, que es justamente el dato que dice
+  cuán vieja está.
+- **La marca de actualización es la hora absoluta, no "hace X".** Un relativo
+  obliga a un segundo intervalo que reescriba el texto entre refresco y refresco,
+  porque si no dice "hace unos segundos" durante medio minuto. Se prefirió no
+  sostener un timer más para algo que se lee igual de rápido: lo que importa es si
+  el dato es de recién o quedó viejo por un fallo.
+- **El polling se pausa mientras el detalle está abierto.** La cola no se ve, y
+  al volver ya se recarga; mantenerlo activo serían requests cuyo resultado nadie
+  mira. El intervalo se limpia tanto al desmontar como al abrir el detalle.
 - **Los listados no muestran el id del pedido, y el detalle lo muestra completo.**
   Se probó truncar el UUID a ocho caracteres, y con el prefijo común del seed
   todas las filas se veían idénticas: una columna que no identifica nada ocupa

@@ -70,6 +70,11 @@ const dateFormat = new Intl.DateTimeFormat(LOCALE, {
   timeZone: TIME_ZONE,
 })
 
+const timeFormat = new Intl.DateTimeFormat(LOCALE, {
+  timeStyle: 'short',
+  timeZone: TIME_ZONE,
+})
+
 export function formatMoney(amount) {
   return moneyFormat.format(amount)
 }
@@ -82,4 +87,9 @@ export function formatDateTime(isoInstant) {
 /** Solo la fecha, para el listado de pedidos, donde la hora es ruido. */
 export function formatDate(isoInstant) {
   return dateFormat.format(new Date(isoInstant))
+}
+
+/** Solo la hora, para la marca de ultima actualizacion de la cola. */
+export function formatTime(instant) {
+  return timeFormat.format(instant)
 }

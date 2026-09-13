@@ -3,6 +3,7 @@ import { listUnresolvedQuestions } from '../api/client'
 import {
   formatDateTime,
   formatMoney,
+  formatTime,
   orderStatusLabel,
   questionStatusLabel,
   SCORE_FACTOR_LABELS,
@@ -13,6 +14,9 @@ import { EmptyState, ErrorBanner, Loading, PriorityBadge } from '../components/u
 
 /** Valor del selector cuando no se filtra. La cola es global por defecto. */
 const ALL_SELLERS = ''
+
+/** Cada cuanto se refresca la cola por su cuenta, sin que nadie lo pida. */
+const POLL_INTERVAL_MS = 30_000
 
 /**
  * Vista de Operaciones: cruza pedidos en vez de bajar a uno.
@@ -27,26 +31,54 @@ function OpsView() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [sellerId, setSellerId] = useState(ALL_SELLERS)
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(null)
   // El par (vendedor, pedido) sale de la fila y no del header, asi que vive
   // aca y no en la raiz.
   const [selected, setSelected] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await listUnresolvedQuestions(sellerId || undefined)
-      setQuestions(response.items)
-    } catch (apiError) {
-      setError(apiError)
-    } finally {
-      setLoading(false)
-    }
-  }, [sellerId])
+  /**
+   * Un refresco silencioso no toca el estado de carga: nadie lo pidio, y
+   * parpadear el indicador cada 30 segundos sobre datos que siguen en pantalla
+   * sugeriria una actividad que el operador no disparo. Una carga a pedido (la
+   * primera, el cambio de filtro, la vuelta del detalle) si lo muestra.
+   */
+  const load = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!silent) {
+        setLoading(true)
+        setError(null)
+      }
+      try {
+        const response = await listUnresolvedQuestions(sellerId || undefined)
+        setQuestions(response.items)
+        setError(null)
+        setLastUpdatedAt(new Date())
+      } catch (apiError) {
+        // La lista no se vacia: lo que ya estaba en pantalla se consulto bien y
+        // sigue siendo valido. Solo deja de ser el ultimo estado conocido, y eso
+        // lo dice el banner junto a la marca de actualizacion.
+        setError(apiError)
+      } finally {
+        if (!silent) {
+          setLoading(false)
+        }
+      }
+    },
+    [sellerId],
+  )
 
   useEffect(() => {
     load()
   }, [load])
+
+  // El intervalo se corta al desmontar y tambien mientras el detalle esta
+  // abierto: ahi la cola no se ve, y al volver se recarga igual.
+  useEffect(() => {
+    if (selected) return undefined
+
+    const timer = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [load, selected])
 
   if (selected) {
     return (
@@ -86,6 +118,13 @@ function OpsView() {
             ))}
           </select>
         </label>
+
+        {/* Hora absoluta y no "hace X": el relativo obliga a un segundo timer
+            solo para que el texto no mienta entre refresco y refresco, y aca lo
+            que importa es si el dato es de recien o quedo viejo por un fallo. */}
+        {lastUpdatedAt && (
+          <p className="last-updated">Actualizado a las {formatTime(lastUpdatedAt)}</p>
+        )}
       </div>
 
       <ErrorBanner error={error} />
@@ -97,7 +136,11 @@ function OpsView() {
         <EmptyState text="No hay preguntas sin resolver." />
       )}
 
-      {questions.length > 0 && (
+      {/* Durante una carga a pedido la tabla se oculta: dejar las filas del
+          vendedor anterior junto al "Cargando..." no permite distinguir si el
+          filtro no matcheo o todavia esta en vuelo. El refresco silencioso no
+          pasa por aca, asi que la cola nunca parpadea sola. */}
+      {!loading && questions.length > 0 && (
         <table>
           <thead>
             <tr>
