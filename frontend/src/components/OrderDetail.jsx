@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   answerQuestion,
+  changeOrderStatus,
   createQuestion,
   getOrderDetail,
   resolveQuestion,
 } from '../api/client'
 import { formatDate, formatMoney, orderStatusLabel } from '../api/labels'
 import NewQuestionForm from './NewQuestionForm'
+import OrderStatusForm, { allowedTransitions } from './OrderStatusForm'
 import QuestionChat from './QuestionChat'
 import { ErrorBanner, Loading, PriorityBadge } from './ui'
 
@@ -84,6 +86,13 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
     [runAction, orderId],
   )
 
+  // El cambio de estado tambien recarga, por el mismo motivo que el resto: la
+  // respuesta trae solo el id y el estado nuevo habilita otras transiciones.
+  const handleChangeStatus = useCallback(
+    (status) => runAction(() => changeOrderStatus(sellerId, orderId, status)),
+    [runAction, sellerId, orderId],
+  )
+
   return (
     <section className="panel">
       <button type="button" onClick={onBack}>
@@ -104,6 +113,19 @@ function OrderDetail({ sellerId, orderId, readOnly = false, onBack }) {
             {order.buyer.name} ({order.buyer.email}) · {formatDate(order.createdAt)} ·{' '}
             {orderStatusLabel(order.status)}
           </p>
+
+          {/* Operaciones mira la cola, no gestiona el envio: el cambio de
+              estado es del vendedor. Y sin transiciones posibles no se muestra
+              nada, que es el caso de un pedido en estado terminal.
+              La key remonta el formulario cuando el estado cambia, para que el
+              selector no quede ofreciendo los destinos del estado anterior. */}
+          {!readOnly && allowedTransitions(order.status).length > 0 && (
+            <OrderStatusForm
+              key={order.status}
+              status={order.status}
+              onChangeStatus={handleChangeStatus}
+            />
+          )}
 
           <h3>Items</h3>
           <table>

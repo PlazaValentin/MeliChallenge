@@ -271,6 +271,19 @@ th {
   gap: 8px;
 }
 
+/* Cambio de estado del pedido. En linea, porque es un solo selector con su
+   boton y apilarlos ocuparia el alto de un formulario sin serlo. */
+.status-change {
+  flex-direction: row;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.status-change select {
+  max-width: 220px;
+}
+
 /* UUID del pedido en el detalle. Monoespaciado y seleccionable, porque su uso
    es copiarlo. */
 .order-id {

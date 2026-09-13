@@ -833,6 +833,31 @@ aceptado en cada una.
   lugar y ensucia la lectura. En el listado el pedido se reconoce por comprador y
   fecha, y en la cola de Operaciones por vendedor, estado y monto. El UUID vive en
   el detalle, sin truncar, que es donde sirve para copiarlo o usarlo en un `curl`.
+- **El selector de estado solo ofrece las transiciones válidas desde el estado
+  actual, con el mapa declarado en el frontend.** Ningún estado admite ir hacia sí
+  mismo, así que ofrecer el estado actual —o uno inalcanzable— sería proponer una
+  acción que el backend rechaza con `409`. Es el mismo criterio que ya se aplicó al
+  selector de producto del alta de pregunta y a las acciones del chat: la UI no
+  propone opciones que el sistema va a rechazar.
+- **Ese mapa no es una duplicación de la regla, porque no decide nada.** La
+  autoridad sigue siendo el enum del dominio, que valida toda transición y
+  responde `409` incluso si la llamada no pasó por esta pantalla; el frontend no
+  puede aplicar una transición inválida ni saltearse esa validación. Lo que vive
+  acá es qué ofrecer, que es una decisión de presentación, no la regla. Si el
+  ciclo de vida cambiara en el backend y esto quedara viejo, el peor caso es un
+  estado que no se ofrece o uno que se ofrece y el servidor rechaza con el mismo
+  error de siempre, nunca un pedido en un estado que las reglas no admiten. La
+  alternativa —ofrecer los cinco estados y dejar fallar— evitaba el mapa a cambio
+  de que el vendedor descubriera por error cuáles de las opciones ofrecidas eran
+  reales.
+- **Un pedido en estado terminal no muestra el selector**, en vez de mostrarlo
+  vacío o deshabilitado: un control que no puede hacer nada invita a buscar por
+  qué no funciona. Que `DELIVERED` y `CANCELLED` no tengan destinos posibles se
+  deriva del mismo mapa, sin una lista aparte de estados terminales que pudiera
+  contradecirlo.
+- **El formulario se remonta cuando cambia el estado del pedido.** Después de
+  aplicar se recarga el detalle, y el estado nuevo habilita otros destinos; sin
+  remontar, el selector seguiría ofreciendo los del estado anterior.
 
 ## Testing
 
