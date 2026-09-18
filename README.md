@@ -21,6 +21,12 @@ priorización no requiere recompilar ni tocar una clase.
 El detalle de por qué cada decisión se tomó así está en
 [DECISIONS.md](DECISIONS.md). Este README cubre cómo correrlo y cómo verificarlo.
 
+> **Anexo de observabilidad.** La instrumentación con OpenTelemetry —trazas,
+> métricas, Collector, Jaeger y Prometheus— se documenta aparte en
+> **[OBSERVABILITY.md](OBSERVABILITY.md)**. Con esa stack todo el sistema
+> levanta con un solo `docker compose up -d --build`, sin necesidad de JDK ni
+> Gradle en la máquina.
+
 ## Stack
 
 - **Backend:** Java 17, Spring Boot 3.2.5, Gradle. Persistencia en memoria

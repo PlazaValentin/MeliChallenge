@@ -1,0 +1,59 @@
+# Stack de observabilidad del anexo. El backend se suma en el Bloque 2.
+# El frontend queda afuera a proposito: no emite telemetria propia
+# (ver PLAN_ANEXO_OTEL.md, Decision 3). Se levanta con `npm run client`.
+
+services:
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
+    ports:
+      # Solo la UI. Los puertos OTLP de Jaeger no se publican: quien recibe
+      # del exterior es el Collector, y Jaeger le llega por la red interna.
+      - "16686:16686"
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.160.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel/collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "13133:13133" # health_check
+    depends_on:
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    volumes:
+      - ./otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Cableado: a donde exporta. Este hostname solo se resuelve dentro de la
+      # red del compose, asi que el valor no tiene sentido fuera de este archivo.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      # Head sampling declarado explicito al 100% (Decision 6). Es el mismo
+      # comportamiento que el default, pero visible: bajar el muestreo es
+      # cambiar este numero.
+      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+      # Los logs no se exportan por OTLP: el Collector no tiene pipeline de
+      # logs, asi que cada envio daria error. La correlacion se resuelve abajo,
+      # imprimiendo el trace_id en el log, que es lo que hace falta para saltar
+      # de una linea a su traza.
+      OTEL_LOGS_EXPORTER: none
+      # Correlacion de logs: el agente ya pone trace_id y span_id en el MDC, asi
+      # que alcanza con que el patron los imprima. Va aca y no en
+      # application.properties porque solo tiene sentido con el agente presente,
+      # y el agente solo esta en la imagen.
+      LOGGING_PATTERN_LEVEL: "%5p [%X{trace_id:-},%X{span_id:-}]"
+    depends_on:
+      - otel-collector

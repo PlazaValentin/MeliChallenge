@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.hackerrank.challenge.domain.exception.BusinessRuleException;
 import com.hackerrank.challenge.domain.exception.DomainValidationException;
 import com.hackerrank.challenge.domain.exception.ResourceNotFoundException;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -47,7 +49,7 @@ public class ApiExceptionHandler {
   /** Dato de entrada mal formado o que no cumple una invariante del dominio. */
   @ExceptionHandler(DomainValidationException.class)
   public ResponseEntity<ErrorResponse> handleValidation(DomainValidationException exception) {
-    return respond(HttpStatus.BAD_REQUEST, exception.getMessage());
+    return respond(HttpStatus.BAD_REQUEST, exception.getMessage(), exception);
   }
 
   /**
@@ -64,6 +66,7 @@ public class ApiExceptionHandler {
             lastNodeOf(violation), violation.getMessage()))
         .toList();
 
+    recordOnSpan(HttpStatus.BAD_REQUEST, exception);
     return ResponseEntity.badRequest()
         .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, errors));
   }
@@ -77,6 +80,7 @@ public class ApiExceptionHandler {
         .map(this::toFieldError)
         .toList();
 
+    recordOnSpan(HttpStatus.BAD_REQUEST, exception);
     return ResponseEntity.badRequest()
         .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, errors));
   }
@@ -96,6 +100,7 @@ public class ApiExceptionHandler {
         INVALID_INPUT,
         List.of(new ErrorResponse.FieldError(field, describeMismatch(exception))));
 
+    recordOnSpan(HttpStatus.BAD_REQUEST, exception);
     log.warn("Parametro invalido '{}' en la consulta.", field);
     return ResponseEntity.badRequest().body(body);
   }
@@ -110,6 +115,7 @@ public class ApiExceptionHandler {
         List.of(new ErrorResponse.FieldError(
             exception.getParameterName(), "Es obligatorio.")));
 
+    recordOnSpan(HttpStatus.BAD_REQUEST, exception);
     return ResponseEntity.badRequest().body(body);
   }
 
@@ -129,6 +135,7 @@ public class ApiExceptionHandler {
   public ResponseEntity<ErrorResponse> handleUnreadableBody(
       HttpMessageNotReadableException exception) {
 
+    recordOnSpan(HttpStatus.BAD_REQUEST, exception);
     log.warn("Cuerpo de la solicitud ilegible o mal tipado.");
     return ResponseEntity.badRequest()
         .body(ErrorResponse.of(HttpStatus.BAD_REQUEST.value(), INVALID_INPUT, bodyErrorsOf(exception)));
@@ -137,13 +144,13 @@ public class ApiExceptionHandler {
   /** Id sintacticamente valido pero que no corresponde a ningun recurso. */
   @ExceptionHandler(ResourceNotFoundException.class)
   public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException exception) {
-    return respond(HttpStatus.NOT_FOUND, exception.getMessage());
+    return respond(HttpStatus.NOT_FOUND, exception.getMessage(), exception);
   }
 
   /** El recurso existe, pero la operacion no es admisible en su estado actual. */
   @ExceptionHandler(BusinessRuleException.class)
   public ResponseEntity<ErrorResponse> handleBusinessRule(BusinessRuleException exception) {
-    return respond(HttpStatus.CONFLICT, exception.getMessage());
+    return respond(HttpStatus.CONFLICT, exception.getMessage(), exception);
   }
 
   /**
@@ -156,7 +163,8 @@ public class ApiExceptionHandler {
     log.error("Error no contemplado procesando la solicitud.", exception);
     return respond(
         HttpStatus.INTERNAL_SERVER_ERROR,
-        "Ocurrio un error inesperado. Volve a intentar en unos minutos.");
+        "Ocurrio un error inesperado. Volve a intentar en unos minutos.",
+        exception);
   }
 
   /**
@@ -244,8 +252,43 @@ public class ApiExceptionHandler {
     return lastSeparator < 0 ? path : path.substring(lastSeparator + 1);
   }
 
+
+  /**
+   * Marca el error sobre el span de entrada HTTP. Es el unico punto por el que
+   * pasan las cuatro familias de error, incluidas las que nacen antes del
+   * controller (conversion de tipos, Bean Validation), que nunca llegan a un
+   * span de dominio.
+   *
+   * <p>
+   * Sin esto la traza no distingue un error de un exito: como el handler
+   * captura toda excepcion, ninguna escapa al DispatcherServlet y la
+   * instrumentacion automatica no ve nada que registrar.
+   *
+   * <p>
+   * Los 4xx no marcan el span como ERROR, siguiendo la convencion de OTel: el
+   * problema es del cliente, no del servidor. Quedan identificables igual por
+   * el atributo {@code error.type}. El stacktrace se registra solo en lo
+   * inesperado, porque una excepcion de negocio es flujo previsto y llenar la
+   * traza de stacktraces de reglas que funcionaron es ruido.
+   */
+  private void recordOnSpan(HttpStatus status, Exception exception) {
+    Span span = Span.current();
+    span.setAttribute("error.type", exception.getClass().getSimpleName());
+
+    if (status.is5xxServerError()) {
+      span.setStatus(StatusCode.ERROR, status.getReasonPhrase());
+      span.recordException(exception);
+    }
+  }
+
   private ResponseEntity<ErrorResponse> respond(HttpStatus status, String description) {
     return ResponseEntity.status(status)
         .body(ErrorResponse.of(status.value(), description));
+  }
+
+  private ResponseEntity<ErrorResponse> respond(
+      HttpStatus status, String description, Exception exception) {
+    recordOnSpan(status, exception);
+    return respond(status, description);
   }
 }

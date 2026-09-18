@@ -11,6 +11,11 @@ import com.hackerrank.challenge.domain.repository.QuestionRepository;
 import com.hackerrank.challenge.domain.repository.SellerRepository;
 import com.hackerrank.challenge.domain.rules.scoring.QuestionImportanceScorer;
 import com.hackerrank.challenge.domain.rules.scoring.QuestionScore;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +38,19 @@ import java.util.stream.Collectors;
  */
 @Service
 public class QuestionService {
+
+    /**
+     * Preguntas creadas por clasificacion. La etiqueta toma los cuatro valores
+     * del enum y no crece con el trafico (ver PLAN_ANEXO_OTEL.md, Decision 17).
+     */
+    private static final LongCounter QUESTIONS_CREATED = GlobalOpenTelemetry
+            .getMeter("com.hackerrank.challenge")
+            .counterBuilder("questions.created")
+            .setDescription("Preguntas creadas, por clasificacion de importancia.")
+            .setUnit("{question}")
+            .build();
+
+    private static final AttributeKey<String> PRIORITY = AttributeKey.stringKey("question.priority");
 
     private final QuestionRepository questionRepository;
     private final OrderRepository orderRepository;
@@ -86,6 +104,17 @@ public class QuestionService {
     private void publishCreated(Question question, Order order) {
         QuestionScore score = scorer.score(question, order, clock);
 
+        QUESTIONS_CREATED.add(1, io.opentelemetry.api.common.Attributes.of(
+                PRIORITY, score.priority().name()));
+
+        // Atributos de dominio sobre el span de entrada HTTP: explican que se
+        // decidio, sin PII (ni comprador ni texto de la pregunta).
+        Span.current()
+                .setAttribute("question.id", question.getId().toString())
+                .setAttribute("order.id", order.getId().toString())
+                .setAttribute("question.priority", score.priority().name())
+                .setAttribute("question.score", score.total());
+
         eventPublisher.publishEvent(new QuestionCreatedEvent(
                 question.getId(),
                 order.getId(),
@@ -117,15 +146,38 @@ public class QuestionService {
      *
      * @param sellerId nulo para traer la cola global, de todos los vendedores.
      */
+    @WithSpan("ops.listUnresolvedQuestions")
     public List<ScoredQuestion> listUnresolvedQuestions(UUID sellerId) {
         List<Question> unresolved = questionRepository.findUnresolved();
         Map<UUID, Order> ordersById = resolveOrders(sellerId, unresolved);
 
-        return unresolved.stream()
+        Span.current()
+                .setAttribute("questions.unresolved.count", unresolved.size())
+                .setAttribute("ops.filtered.by.seller", sellerId != null);
+
+        return scoreAndSort(unresolved, ordersById);
+    }
+
+    /**
+     * Un unico span para el scoring de las N preguntas, con la cantidad como
+     * atributo: un span por pregunta inflaria la traza sin decir mas
+     * (ver PLAN_ANEXO_OTEL.md, Decision 11).
+     */
+    @WithSpan("ops.scoreAndSort")
+    private List<ScoredQuestion> scoreAndSort(List<Question> unresolved, Map<UUID, Order> ordersById) {
+        List<ScoredQuestion> scored = unresolved.stream()
                 .filter(question -> ordersById.containsKey(question.getOrderId()))
                 .map(question -> toScoredQuestion(question, ordersById.get(question.getOrderId())))
                 .sorted(byImportance())
                 .toList();
+
+        Span.current().setAttribute("questions.scored.count", scored.size());
+        if (!scored.isEmpty()) {
+            Span.current()
+                    .setAttribute("questions.top.score", scored.get(0).score().total())
+                    .setAttribute("questions.top.priority", scored.get(0).score().priority().name());
+        }
+        return scored;
     }
 
     /**
@@ -134,6 +186,7 @@ public class QuestionService {
      * traen todos los del vendedor y la pertenencia se decide por presencia en el
      * mapa.
      */
+    @WithSpan("ops.resolveOrders")
     private Map<UUID, Order> resolveOrders(UUID sellerId, List<Question> unresolved) {
         if (sellerId != null) {
             requireSellerExists(sellerId);
