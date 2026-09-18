@@ -90,7 +90,12 @@ curl -X PATCH "localhost:8080/api/sellers/10000000-0000-0000-0000-000000000001/o
 - *Escenario con error:* filtrá por el tag `error.type`. Por ejemplo
   `error.type=BusinessRuleException` trae los 409.
 
-**Métricas** — en Prometheus:
+**Métricas** — en Prometheus.
+
+> Las métricas tardan **hasta un minuto y medio** en aparecer después de generar
+> tráfico: el SDK las exporta cada 60 segundos, el Collector batchea, y
+> Prometheus scrapea cada 15. Las trazas, en cambio, aparecen en pocos segundos.
+> Si una consulta devuelve vacío recién arrancado, es esto y no un fallo.
 
 ```promql
 sum by (http_response_status_code) (http_server_request_duration_seconds_count)
