@@ -62,6 +62,39 @@ Cubre los escenarios exitosos, la notificación asincrónica y cinco errores (un
 es en memoria, así que para repetirlo desde un estado conocido conviene
 `docker compose restart backend` antes.
 
+### Cómo reproducir un 5xx
+
+Ningún request válido puede producir un 500: las invariantes del dominio impiden
+los tres `IllegalStateException` del código. Se llega por configuración, que es
+justamente la clase de fallo para la que existe esa red de contención.
+
+`ScoringConfig` valida que los tramos no estén vacíos, pero **no valida que el
+último tramo no tenga tope**. Declarando un único tramo acotado, cualquier
+pedido por encima no cae en ninguno y el scorer corta:
+
+```yaml
+# en docker-compose.yml, servicio backend, temporalmente
+    environment:
+      JAVA_TOOL_OPTIONS: >-
+        -Dapp.scoring.order-amount-tiers[0].upper-bound=100
+        -Dapp.scoring.order-amount-tiers[0].points=0
+```
+
+```bash
+docker compose up -d backend
+curl -i "localhost:8080/api/ops/questions/unresolved"   # 500
+```
+
+En la traza ese request sale con status `ERROR` —en rojo en Jaeger— y con el
+evento de excepción completo: `IllegalStateException`, el mensaje
+(*"Ningún tramo configurado cubre el valor 13980.00"*) y el stacktrace. Es el
+contraste directo con los 4xx, que quedan sin marcar por convención.
+
+Hay que sacar la variable y reiniciar para volver al estado normal. La lista
+tiene que declararse entera desde una sola fuente: Spring Boot no permite
+sobreescribir un solo elemento de una lista definida en `application.properties`,
+y el intento falla al arrancar en vez de degradar en silencio.
+
 Un error puntual, sin el script — transición inválida sobre un pedido que está
 `CANCELLED`:
 
@@ -174,7 +207,12 @@ nunca llegan a un service.
 | 400 invariante de dominio | Entidad | `error.type` |
 | 404 | Service | `error.type` |
 | 409 regla de negocio | Entidad | `error.type` |
-| 5xx | Red de contención | `error.type` + status `ERROR` + stacktrace |
+| 5xx | Red de contención | status `ERROR` + evento de excepción con stacktrace |
+
+En los 5xx el agente pisa `error.type` con el status code (`500`), porque es lo
+que la convención HTTP prescribe para spans de servidor; el tipo de excepción
+queda en el evento del span. En los 4xx el agente no lo setea, así que ahí el
+atributo conserva el nombre de la excepción y sirve para filtrar.
 
 **Los 4xx no marcan el span como `ERROR`**, siguiendo la convención de OTel: el
 problema es del cliente, no del servidor, y un 409 de "no se puede despachar un
@@ -276,11 +314,11 @@ aplicación.
 
 ## Limitaciones conocidas
 
-- **No hay ningún 5xx reproducible desde afuera.** Los tres
+- **Ningún 5xx se puede provocar con requests válidos.** Los tres
   `IllegalStateException` del código son violaciones de integridad que las
-  invariantes del dominio impiden que ocurran. El escenario de error demostrable
-  es un 4xx y, por convención, no pinta la traza de rojo: se identifica por
-  `error.type` y por las métricas de status code.
+  invariantes del dominio impiden. El 5xx se reproduce por configuración (ver
+  abajo); con requests, el escenario de error demostrable es un 4xx, que por
+  convención no pinta la traza de rojo.
 - **`exported_instance` crece con cada reinicio del proceso** (ver
   Cardinalidad).
 - **Storage en memoria en Jaeger y en Prometheus.** Reiniciar los contenedores
