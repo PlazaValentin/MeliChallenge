@@ -1,0 +1,58 @@
+# Pipeline del Collector. Recibe OTLP de la app, procesa, y abre en dos:
+# trazas a Jaeger por OTLP, metricas a un endpoint que Prometheus scrapea.
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # El orden de la lista es el orden de ejecucion, y memory_limiter va primero
+  # a proposito: si la memoria esta al limite conviene rechazar en la entrada
+  # antes de gastar trabajo en procesar lo que despues no se va a poder exportar.
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+
+  # Marca de donde viene la telemetria sin tocar la configuracion del agente.
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: local
+        action: upsert
+
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+
+exporters:
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  # Expone las metricas para que Prometheus las scrapee (modelo pull). Este
+  # endpoint es ademas el punto de corte para diagnosticar: si las metricas
+  # estan aca, lo que falla es el scrape; si no estan, falla la app o el pipeline.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp_grpc/jaeger]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [prometheus]

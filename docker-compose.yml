@@ -1,0 +1,32 @@
+# Stack de observabilidad del anexo. El backend se suma en el Bloque 2.
+# El frontend queda afuera a proposito: no emite telemetria propia
+# (ver PLAN_ANEXO_OTEL.md, Decision 3). Se levanta con `npm run client`.
+
+services:
+  jaeger:
+    image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
+    ports:
+      # Solo la UI. Los puertos OTLP de Jaeger no se publican: quien recibe
+      # del exterior es el Collector, y Jaeger le llega por la red interna.
+      - "16686:16686"
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.160.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel/collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "13133:13133" # health_check
+    depends_on:
+      - jaeger
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    volumes:
+      - ./otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
