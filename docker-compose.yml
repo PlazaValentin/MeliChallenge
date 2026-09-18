@@ -35,5 +35,18 @@ services:
     build: ./backend
     ports:
       - "8080:8080"
+    environment:
+      # Cableado: a donde exporta. Este hostname solo se resuelve dentro de la
+      # red del compose, asi que el valor no tiene sentido fuera de este archivo.
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      # Head sampling declarado explicito al 100% (Decision 6). Es el mismo
+      # comportamiento que el default, pero visible: bajar el muestreo es
+      # cambiar este numero.
+      OTEL_TRACES_SAMPLER: parentbased_traceidratio
+      OTEL_TRACES_SAMPLER_ARG: "1.0"
+      # El Collector no tiene pipeline de logs, asi que exportarlos daria error
+      # en cada envio. La correlacion de logs es un extra todavia no decidido.
+      OTEL_LOGS_EXPORTER: none
     depends_on:
       - otel-collector

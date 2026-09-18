@@ -19,10 +19,21 @@ RUN ./gradlew bootJar --no-daemon
 FROM eclipse-temurin:17-jre AS runtime
 WORKDIR /app
 
+# Agente de OpenTelemetry, con la version pineada: un agente que se actualiza
+# solo cambiaria la telemetria sin que cambie una linea de codigo.
+ARG OTEL_AGENT_VERSION=2.31.1
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_AGENT_VERSION}/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
+
 # Usuario sin privilegios: nada de lo que hace la app necesita root.
-RUN useradd --system --no-create-home --shell /usr/sbin/nologin app
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin app \
+ && chmod 644 /app/opentelemetry-javaagent.jar
 COPY --from=build --chown=app:app /src/build/libs/*.jar app.jar
 USER app
 
+# La identidad del servicio viaja con el artefacto y no con el despliegue, para
+# que la imagen no sea anonima si alguien la corre suelta; el deployment puede
+# sobreescribirla (ver PLAN_ANEXO_OTEL.md, Decision 8).
+ENV OTEL_SERVICE_NAME=seller-dashboard-api
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-javaagent:/app/opentelemetry-javaagent.jar", "-jar", "/app/app.jar"]
