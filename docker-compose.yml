@@ -45,8 +45,15 @@ services:
       # cambiar este numero.
       OTEL_TRACES_SAMPLER: parentbased_traceidratio
       OTEL_TRACES_SAMPLER_ARG: "1.0"
-      # El Collector no tiene pipeline de logs, asi que exportarlos daria error
-      # en cada envio. La correlacion de logs es un extra todavia no decidido.
+      # Los logs no se exportan por OTLP: el Collector no tiene pipeline de
+      # logs, asi que cada envio daria error. La correlacion se resuelve abajo,
+      # imprimiendo el trace_id en el log, que es lo que hace falta para saltar
+      # de una linea a su traza.
       OTEL_LOGS_EXPORTER: none
+      # Correlacion de logs: el agente ya pone trace_id y span_id en el MDC, asi
+      # que alcanza con que el patron los imprima. Va aca y no en
+      # application.properties porque solo tiene sentido con el agente presente,
+      # y el agente solo esta en la imagen.
+      LOGGING_PATTERN_LEVEL: "%5p [%X{trace_id:-},%X{span_id:-}]"
     depends_on:
       - otel-collector

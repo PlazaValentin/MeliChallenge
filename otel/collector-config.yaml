@@ -34,6 +34,19 @@ exporters:
     endpoint: jaeger:4317
     tls:
       insecure: true
+    # Resiliencia ante un backend momentaneamente caido: se reintenta con
+    # backoff y se encola en memoria, en vez de descartar en el primer fallo.
+    # El tope del encolado lo respalda memory_limiter, que rechaza en la entrada
+    # antes de que la cola pueda comerse la memoria del proceso.
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 300s
+    sending_queue:
+      enabled: true
+      num_consumers: 2
+      queue_size: 1000
 
   # Expone las metricas para que Prometheus las scrapee (modelo pull). Este
   # endpoint es ademas el punto de corte para diagnosticar: si las metricas

@@ -312,6 +312,46 @@ del SDK se leen al arrancar el proceso, así que cambiar el muestreo por
 configuración exige reiniciar los pods. En el Collector se recarga sin tocar la
 aplicación.
 
+## Correlación de logs
+
+Cada línea de log lleva el `trace_id` y el `span_id` del request que la produjo:
+
+```
+INFO [904cd8fc04d07c506ef7e2734171d329,e38f2cce3558772c] [task-1] EmailNotificationChannel :
+  [EMAIL] Aviso al vendedor ... se clasifico HIGH (115 puntos).
+```
+
+Con eso se salta de una línea de log a su traza completa pegando el id en la
+búsqueda de Jaeger, y al revés. El ejemplo de arriba es además el del hilo
+asincrónico: el log de la notificación queda atado a la traza del request que la
+originó, aunque haya salido después de la respuesta.
+
+No hizo falta ninguna librería: el agente ya pone las dos claves en el MDC, y lo
+único agregado es el patrón de log. Va como variable de entorno en el compose y
+no en `application.properties` porque solo tiene sentido con el agente presente,
+y el agente solo está en la imagen: corriendo la app con `gradle bootRun` el
+patrón habría impreso dos campos siempre vacíos.
+
+## Resiliencia del pipeline
+
+El Collector tiene tres mecanismos, y cada uno cubre un modo de falla distinto:
+
+| Mecanismo | Qué protege |
+|---|---|
+| `memory_limiter` | Rechaza en la entrada cuando la memoria aprieta, antes de procesar lo que no se va a poder exportar |
+| `sending_queue` | Encola en memoria si el backend no acepta, en vez de descartar en el primer fallo |
+| `retry_on_failure` | Reintenta con backoff (5s a 30s, hasta 5 minutos) ante un backend momentáneamente caído |
+| `health_check` | Expone el estado del propio Collector en el 13133 |
+
+El orden importa para el encolado: el tope de la cola lo respalda
+`memory_limiter`, que rechaza en la entrada antes de que la cola pueda comerse
+la memoria del proceso. Una cola sin ese límite convierte un backend caído en
+un Collector caído.
+
+Vale aclarar que la cola es **en memoria**: si el Collector se reinicia, se
+pierde lo encolado. Persistirla requiere una extensión de almacenamiento, que
+para esta escala es desproporcionado.
+
 ## Limitaciones conocidas
 
 - **Ningún 5xx se puede provocar con requests válidos.** Los tres
@@ -324,9 +364,9 @@ aplicación.
 - **Storage en memoria en Jaeger y en Prometheus.** Reiniciar los contenedores
   borra la telemetría acumulada. Es deliberado: la stack existe para demostrar,
   no para retener.
-- **Sin correlación de logs.** El agente ya pone `trace_id` y `span_id` en el
-  MDC —se verificó—, así que alcanzaría con ajustar el patrón de log y agregar
-  una pipeline de logs al Collector. Se dejó fuera por alcance.
+- **Los logs no se exportan por OTLP.** Están correlacionados (llevan el
+  `trace_id`), pero no viajan al Collector: eso requeriría una pipeline de logs
+  y un backend donde consultarlos, que quedó fuera de alcance.
 - **Sin dashboards.** Las consultas de la sección "Dónde consultar" cubren
   tráfico, latencia y errores; el enunciado no exige dashboards.
 - **Un solo servicio.** La propagación W3C entre procesos no se puede demostrar
